@@ -44,7 +44,7 @@ import java.io.File;
 
 
 @Reference(window=@Window(start=-1, stop=1))
-public class WalkerTRConsensus1 extends ReadWalker<Integer,Integer>  {
+public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
 
     @Output
     PrintStream out;
