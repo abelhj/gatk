@@ -28,9 +28,7 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMFileWriter;
 import htsjdk.samtools.SAMReadGroupRecord;
 import htsjdk.samtools.SAMRecord;
-import htsjdk.samtools.SAMFileWriter;
 import htsjdk.samtools.SAMFileWriterFactory;
-
 
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -46,13 +44,16 @@ import java.io.File;
 
 
 @Reference(window=@Window(start=-1, stop=1))
-public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
+public class WalkerTRConsensus1 extends ReadWalker<Integer,Integer>  {
 
     @Output
     PrintStream out;
     /**
      * Reads with mapping quality values lower than this threshold will be skipped. This is set to -1 by default to disable the evaluation and ignore this threshold.
      */
+
+    @Argument(fullName = "consensusBam", shortName = "cbam", doc="consensus BAM ouput", required=true)
+    String consensusBam=null;
     @Argument(fullName = "minMappingQuality", shortName = "mmq", doc = "Minimum mapping quality of reads to count towards depth", required = false, minValue = 0, maxValue = Integer.MAX_VALUE)
     int minMappingQuality = -1;
     @Argument(fullName = "minPercentRG", shortName = "mprg", doc = "Minimum percent mutant bases per read group", required = false, minValue = 0, maxValue=1)
@@ -65,8 +66,6 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
     int minOffset=0;
     @Argument(fullName = "maxNM", shortName = "maxNM", doc="filter reads with edit distance greater than maxNM", required=false)
     int maxNM=99;
-    @Argument(fullName = "consensusBam", shortName = "cbam", doc="consensus BAM ouput", required=true)
-    String consensusBam=null;
 
     boolean debg=false;
     PrintStream bcout=null;
@@ -74,9 +73,14 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
     SAMFileWriterFactory sf=null;
 
     LinkedHashMap<String, LinkedHashMap<String, ReadFamilyLead> > bcmaster=null;
-    LinkedHashMap<String, LinkedList<GATKSAMRecord> > bcreads;
-    GenomeLoc oldpos=null;
-    GenomeLoc curpos=null;
+    //LinkedHashMap<String, LinkedList<GATKSAMRecord> > bcreads;
+    LinkedHashMap<String, LinkedHashMap<Integer, LinkedList<GATKSAMRecord> > > bcreads;
+    //GenomeLoc oldpos=null;
+    //GenomeLoc curpos=null;
+    String oldchr=null;
+    String curchr=null;
+    int oldpos=-1;
+    int curpos=-1;
     
     public void initialize() {
   
@@ -92,9 +96,8 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
 	    }
 	}
 	bcmaster=new LinkedHashMap<String, LinkedHashMap<String, ReadFamilyLead> >();
-	bcreads=new LinkedHashMap<String, LinkedList<GATKSAMRecord> >();
+	bcreads=new LinkedHashMap<String, LinkedHashMap<Integer, LinkedList<GATKSAMRecord> > >();
 	sf=new SAMFileWriterFactory();
-	//samwriter=ReadUtils.createSAMFileWriterWithCompression(this.getToolkit().getSAMFileHeader(), true, consensusBam, 5);
 	samwriter=sf.makeBAMWriter(this.getToolkit().getSAMFileHeader(), true, new File(consensusBam), 5);
     }
 
@@ -102,20 +105,31 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
 	
 	if(ref!=null) {
 	    if (ref.getBase() == 'N' || ref.getBase() == 'n') return null; // we don't deal with the N ref base case
-	    curpos=ref.getLocus();
-	    if(!curpos.equals(oldpos) ) {
+	    //curpos=ref.getLocus();
+	    curchr=read.getReferenceName();
+	    curpos=read.getAlignmentStart();
+	    if(curpos>oldpos ||  !(curchr.equals(oldchr))) {
+		//System.out.println("-----------------------------"+curchr+":"+curpos+"\t"+oldchr+":"+oldpos);
 		for(String bc : bcreads.keySet()) {
-		    ReadFamily rf=new ReadFamily(bcreads.get(bc));
-		    rf.getConsensus(bcout, bcmaster, samwriter);	
+		    for(Integer ii : bcreads.get(bc).keySet()) {
+			ReadFamily rf=new ReadFamily(bcreads.get(bc).get(ii));
+			//System.out.println(rf);
+			rf.getConsensus(bcout, bcmaster, samwriter);	
+		    }
 		}
-		bcreads=new LinkedHashMap<String, LinkedList<GATKSAMRecord> >();
+		bcreads=new LinkedHashMap<String, LinkedHashMap<Integer, LinkedList<GATKSAMRecord> > >();
 		oldpos=curpos;
+		oldchr=curchr;
 	    }
 	    String bc=read.getStringAttribute("X0");
+	    int orderInPair= read.getFirstOfPairFlag() ? 1 : 2;
 	    if(!bcreads.containsKey(bc)) {
-		bcreads.put(bc, new LinkedList<GATKSAMRecord>());
+		bcreads.put(bc, new LinkedHashMap<Integer, LinkedList<GATKSAMRecord> >());
 	    }
-	    bcreads.get(bc).add(read);
+	    if(!bcreads.get(bc).containsKey(orderInPair)) {
+		bcreads.get(bc).put(orderInPair, new LinkedList<GATKSAMRecord>());
+	    }
+	    bcreads.get(bc).get(orderInPair).add(read);
 	}
 	return 1;
     }
@@ -130,8 +144,11 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
 
     public void onTraversalDone(Integer result) {
 	for(String bc : bcreads.keySet()) {
-	    ReadFamily rf=new ReadFamily(bcreads.get(bc));
-	    rf.getConsensus(bcout, bcmaster, samwriter);
+	    for (Integer ii : bcreads.get(bc).keySet()) {
+		ReadFamily rf=new ReadFamily(bcreads.get(bc).get(ii));
+		//System.out.println(rf);
+		rf.getConsensus(bcout, bcmaster, samwriter);
+	    }
 	}
 	samwriter.close();
     }
