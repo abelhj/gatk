@@ -40,8 +40,8 @@ org/broadinstitute/gatk/engine/GenomeAnalysisEngineUnitTest$TestReadTransformer.
 org/broadinstitute/gatk/engine/walkers/WalkerTest$ParallelTestType.class
 org/broadinstitute/gatk/engine/downsampling/PerSampleDownsamplingReadsIteratorUnitTest$PerSampleDownsamplingReadsIteratorTest.class
 org/broadinstitute/gatk/engine/recalibration/RecalDatumUnitTest$RecalDatumTestProvider.class
-org/broadinstitute/gatk/engine/ReadMetricsUnitTest$DummyReadWalker.class
 org/broadinstitute/gatk/engine/arguments/LoggingIntegrationTest.class
+org/broadinstitute/gatk/engine/ReadMetricsUnitTest$DummyReadWalker.class
 org/broadinstitute/gatk/engine/MaxRuntimeIntegrationTest$MaxRuntimeTestProvider.class
 org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark$WalkerType$3.class
 org/broadinstitute/gatk/engine/datasources/providers/IntervalReferenceOrderedViewUnitTest$ReadMetaDataTrackerRODStreamTest.class
@@ -63,8 +63,8 @@ org/broadinstitute/gatk/engine/iterators/MisencodedBaseQualityUnitTest.class
 org/broadinstitute/gatk/engine/filters/ReadGroupBlackListFilterUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/DownsamplerBenchmark$1.class
 org/broadinstitute/gatk/engine/datasources/reads/GATKBAMIndexUnitTest.class
-org/broadinstitute/gatk/engine/WalkerManagerUnitTest.class
 org/broadinstitute/gatk/engine/traversals/DummyActiveRegionWalker.class
+org/broadinstitute/gatk/engine/WalkerManagerUnitTest.class
 org/broadinstitute/gatk/engine/io/stubs/ArgumentTypeDescriptorUnitTest$ATDTestCommandLineProgram$OutputRequiredVcfArgumentSource.class
 org/broadinstitute/gatk/engine/downsampling/SimplePositionalDownsamplerUnitTest$SimplePositionalDownsamplerTest.class
 org/broadinstitute/gatk/engine/datasources/providers/LocusReferenceViewUnitTest.class
@@ -113,8 +113,8 @@ org/broadinstitute/gatk/engine/recalibration/RecalibrationReportUnitTest.class
 org/broadinstitute/gatk/engine/EngineFeaturesIntegrationTest.class
 org/broadinstitute/gatk/engine/datasources/providers/LocusViewTemplate$SAMRecordIterator.class
 org/broadinstitute/gatk/engine/walkers/TestCountReadsWalker.class
-org/broadinstitute/gatk/engine/ReadMetricsUnitTest$EveryTenthReadFilter.class
 org/broadinstitute/gatk/engine/iterators/testIterator.class
+org/broadinstitute/gatk/engine/ReadMetricsUnitTest$EveryTenthReadFilter.class
 org/broadinstitute/gatk/engine/CommandLineGATKUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/ReadProcessingBenchmark.class
 org/broadinstitute/gatk/engine/samples/SampleUnitTest.class
@@ -122,8 +122,8 @@ org/broadinstitute/gatk/engine/recalibration/RecalDatumUnitTest$1.class
 org/broadinstitute/gatk/engine/recalibration/ReadCovariatesUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark$WalkerType$1.class
 org/broadinstitute/gatk/engine/datasources/providers/CoveredLocusViewUnitTest.class
-org/broadinstitute/gatk/engine/MaxRuntimeIntegrationTest.class
 org/broadinstitute/gatk/engine/executive/ReduceTreeUnitTest.class
+org/broadinstitute/gatk/engine/MaxRuntimeIntegrationTest.class
 org/broadinstitute/gatk/engine/ReadMetricsUnitTest$DummyLocusWalker.class
 org/broadinstitute/gatk/engine/GenomeAnalysisEngineUnitTest.class
 org/broadinstitute/gatk/engine/samples/SampleDBUnitTest.class

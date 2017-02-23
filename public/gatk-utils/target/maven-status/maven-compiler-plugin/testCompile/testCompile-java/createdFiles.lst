@@ -10,8 +10,8 @@ org/broadinstitute/gatk/utils/locusiterator/LocusIteratorBenchmark.class
 org/broadinstitute/gatk/utils/nanoScheduler/ReducerUnitTest$ReduceSumTest.class
 org/broadinstitute/gatk/utils/GenomeLocParserBenchmark.class
 org/broadinstitute/gatk/utils/locusiterator/LocusIteratorByStateUnitTest$WeakReadTrackingIterator.class
-org/broadinstitute/gatk/utils/GenomeLocParserUnitTest$1.class
 org/broadinstitute/gatk/utils/GenomeLocUnitTest$1.class
+org/broadinstitute/gatk/utils/GenomeLocParserUnitTest$1.class
 org/broadinstitute/gatk/utils/sam/ReadUtilsUnitTest$GetAdaptorFunc.class
 org/broadinstitute/gatk/utils/codecs/beagle/BeagleCodecUnitTest.class
 org/broadinstitute/gatk/utils/variant/VariantContextBenchmark$10.class
@@ -91,8 +91,8 @@ org/broadinstitute/gatk/utils/variant/VariantContextBenchmark$6.class
 org/broadinstitute/gatk/utils/collections/DefaultHashMapUnitTest.class
 org/broadinstitute/gatk/utils/refdata/utils/TestRMDTrackBuilder.class
 org/broadinstitute/gatk/utils/BitSetUtilsUnitTest.class
-org/broadinstitute/gatk/utils/activeregion/ActiveRegionUnitTest.class
 org/broadinstitute/gatk/utils/NGSPlatformUnitTest.class
+org/broadinstitute/gatk/utils/activeregion/ActiveRegionUnitTest.class
 org/broadinstitute/gatk/utils/variant/GATKVariantContextUtilsUnitTest$ReverseClippingPositionTestProvider.class
 org/broadinstitute/gatk/utils/pileup/ReadBackedPileupUnitTest$1.class
 org/broadinstitute/gatk/utils/commandline/ParsingEngineUnitTest$MutuallyExclusiveArgProvider.class
@@ -229,8 +229,8 @@ org/broadinstitute/gatk/utils/commandline/ParsingEngineUnitTest$EnumArgProvider.
 org/broadinstitute/gatk/utils/threading/EfficiencyMonitoringThreadFactoryUnitTest$1.class
 org/broadinstitute/gatk/utils/refdata/utils/FakeRODatum.class
 org/broadinstitute/gatk/utils/codecs/samread/SAMReadCodecUnitTest.class
-org/broadinstitute/gatk/utils/AutoFormattingTimeUnitTest.class
 org/broadinstitute/gatk/utils/GenomeLocUnitTest.class
+org/broadinstitute/gatk/utils/AutoFormattingTimeUnitTest.class
 org/broadinstitute/gatk/utils/locusiterator/LocusIteratorByStateUnitTest$1.class
 org/broadinstitute/gatk/utils/refdata/utils/CheckableCloseableTribbleIterator.class
 org/broadinstitute/gatk/utils/commandline/ParsingEngineUnitTest$UnrequiredArgProvider.class

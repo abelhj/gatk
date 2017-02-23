@@ -56,14 +56,14 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
     String consensusBam=null;
     @Argument(fullName = "minMappingQuality", shortName = "mmq", doc = "Minimum mapping quality of reads to count towards depth", required = false, minValue = 0, maxValue = Integer.MAX_VALUE)
     int minMappingQuality = -1;
-    @Argument(fullName = "minPercentRG", shortName = "mprg", doc = "Minimum percent mutant bases per read group", required = false, minValue = 0, maxValue=1)
-    double minPercentRG=0.9;
+    //@Argument(fullName = "minPercentRG", shortName = "mprg", doc = "Minimum percent mutant bases per read group", required = false, minValue = 0, maxValue=1)
+    //double minPercentRG=0.9;
     @Argument(fullName = "debug", shortName = "debug", doc= "1 to print read groups and consensus to bcfile", required=false)
     int debug=0;
     @Argument(fullName = "bcfile", shortName = "bc", doc= "barcode list", required=false)
     String bcfile=null;
-    @Argument(fullName = "minOffset", shortName = "minOffset", doc="min offset from either end of read", required=false)
-    int minOffset=0;
+    //@Argument(fullName = "minOffset", shortName = "minOffset", doc="min offset from either end of read", required=false)
+    //int minOffset=0;
     @Argument(fullName = "maxNM", shortName = "maxNM", doc="filter reads with edit distance greater than maxNM", required=false)
     int maxNM=99;
 
@@ -73,10 +73,8 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
     SAMFileWriterFactory sf=null;
 
     LinkedHashMap<String, LinkedHashMap<String, ReadFamilyLead> > bcmaster=null;
-    //LinkedHashMap<String, LinkedList<GATKSAMRecord> > bcreads;
     LinkedHashMap<String, LinkedHashMap<Integer, LinkedList<GATKSAMRecord> > > bcreads;
-    //GenomeLoc oldpos=null;
-    //GenomeLoc curpos=null;
+
     String oldchr=null;
     String curchr=null;
     int oldpos=-1;
@@ -92,7 +90,7 @@ public class WalkerTRConsensus extends ReadWalker<Integer,Integer>  {
 	    try {
 		bcout=new PrintStream(new File(bcfile));
 	    } catch(Exception e) {
-		System.err.println("Could be creat debug output file.\n");
+		System.err.println("Could not create debug output file.\n");
 	    }
 	}
 	bcmaster=new LinkedHashMap<String, LinkedHashMap<String, ReadFamilyLead> >();

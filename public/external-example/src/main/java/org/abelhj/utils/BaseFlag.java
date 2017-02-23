@@ -1,6 +1,6 @@
-package org.abelhj;
+package org.abelhj.utils;
 
-public class BaseFlag{
+public class BaseFlag {
 
     public char base;
     public int flag;
