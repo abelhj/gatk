@@ -83,8 +83,8 @@ org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark$WalkerType.
 org/broadinstitute/gatk/engine/samples/PedReaderUnitTest$PedReaderTestTagParsing.class
 org/broadinstitute/gatk/engine/executive/ReduceTreeUnitTest$ReduceTestEntry.class
 org/broadinstitute/gatk/engine/datasources/providers/ShardDataProviderUnitTest$ConflictingTestView.class
-org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark.class
 org/broadinstitute/gatk/engine/datasources/reads/DownsamplerBenchmark$Downsampling$1.class
+org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark.class
 org/broadinstitute/gatk/engine/downsampling/ReservoirDownsamplerUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/FilePointerUnitTest.class
 org/broadinstitute/gatk/engine/filters/ReadFilterTest.class
@@ -118,8 +118,8 @@ org/broadinstitute/gatk/engine/ReadMetricsUnitTest$EveryTenthReadFilter.class
 org/broadinstitute/gatk/engine/CommandLineGATKUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/ReadProcessingBenchmark.class
 org/broadinstitute/gatk/engine/samples/SampleUnitTest.class
-org/broadinstitute/gatk/engine/recalibration/RecalDatumUnitTest$1.class
 org/broadinstitute/gatk/engine/recalibration/ReadCovariatesUnitTest.class
+org/broadinstitute/gatk/engine/recalibration/RecalDatumUnitTest$1.class
 org/broadinstitute/gatk/engine/datasources/reads/GATKWalkerBenchmark$WalkerType$1.class
 org/broadinstitute/gatk/engine/datasources/providers/CoveredLocusViewUnitTest.class
 org/broadinstitute/gatk/engine/executive/ReduceTreeUnitTest.class
@@ -152,8 +152,8 @@ org/broadinstitute/gatk/engine/io/stubs/ArgumentTypeDescriptorUnitTest$ATDTestCo
 org/broadinstitute/gatk/engine/samples/PedReaderUnitTest$PedReaderTest.class
 org/broadinstitute/gatk/engine/arguments/LoggingIntegrationTest$LoggingTestProvider.class
 org/broadinstitute/gatk/engine/traversals/TraverseReadsUnitTest.class
-org/broadinstitute/gatk/engine/datasources/reads/ReadShardBalancerUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/DownsamplerBenchmark$Downsampling$2.class
+org/broadinstitute/gatk/engine/datasources/reads/ReadShardBalancerUnitTest.class
 org/broadinstitute/gatk/engine/datasources/reads/MockLocusShard.class
 org/broadinstitute/gatk/engine/downsampling/FractionalDownsamplerUnitTest.class
 org/broadinstitute/gatk/engine/io/OutputTrackerUnitTest.class

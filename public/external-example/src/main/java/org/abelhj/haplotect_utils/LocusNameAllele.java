@@ -1,14 +1,15 @@
-package org.abelhj;
+package org.abelhj.haplotect_utils;
 
 import java.util.LinkedHashMap;
-import org.broadinstitute.gatk.utils.GenomeLoc;
+
 import org.broadinstitute.gatk.utils.pileup.PileupElement;
+import org.broadinstitute.gatk.utils.GenomeLoc;
 
 public class LocusNameAllele {
     private GenomeLoc locus=null;
-    private LinkedHashMap<String, PileupElement> reads=null;
+    private LinkedHashMap<String, BaseandQual> reads=null;
 
-    public LocusNameAllele(GenomeLoc loc, LinkedHashMap<String, PileupElement> map) {
+    public LocusNameAllele(GenomeLoc loc, LinkedHashMap<String, BaseandQual> map) {
         locus=loc;
         reads=map;
     }
@@ -25,7 +26,7 @@ public class LocusNameAllele {
         return locus;
     }
     
-    public LinkedHashMap<String, PileupElement> getAlleles() {
+    public LinkedHashMap<String, BaseandQual> getAlleles() {
         return reads;
     }
     

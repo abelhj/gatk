@@ -1,4 +1,4 @@
-package org.abelhj;
+package org.abelhj.haplotect_utils;
 
 import org.broadinstitute.gatk.utils.GenomeLoc;
 
@@ -20,17 +20,31 @@ public class SnpPair {
     }
 
     public SnpPair(GenomeLoc v1, GenomeLoc v2, String ss) {
-        snp1=v1;
-        snp2=v2;
-        info=ss;
-        hapFreq=new LinkedHashMap<String,Integer>();
-        String[] spl=info.split("\\t");
-        String[] freqs=spl[7].split(";");
-        for(int i=0; i<freqs.length; i++) {
-            String[] kv=freqs[i].split(":");
-            hapFreq.put(kv[0], Integer.parseInt(kv[1]));
-        }
-            
+        this(v1, v2, ss, false);    
+    }
+
+    public SnpPair(GenomeLoc v1, GenomeLoc v2, String ss, boolean unif) {
+	snp1=v1;
+	snp2=v2;
+	info=ss;
+	hapFreq=new LinkedHashMap<String, Integer>();
+	String[] spl=info.split("\\t");
+	if(!unif) {
+	    String[] freqs=spl[7].split(";");
+	    for(int i=0; i<freqs.length; i++) {
+		String[] kv=freqs[i].split(":");
+		hapFreq.put(kv[0], Integer.parseInt(kv[1]));
+	    }
+	} else {
+	    String str=(new StringBuilder()).append(spl[3]).append(spl[5]).toString();
+	    hapFreq.put(str, 100);
+	    str=(new StringBuilder()).append(spl[3]).append(spl[6]).toString();
+	    hapFreq.put(str, 100);
+	    str=(new StringBuilder()).append(spl[4]).append(spl[5]).toString();
+            hapFreq.put(str, 100);
+	    str=(new StringBuilder()).append(spl[4]).append(spl[6]).toString();
+            hapFreq.put(str, 100);
+	}
     }
     
     public LinkedHashMap<String, Integer> getFreqs() {
