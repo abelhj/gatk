@@ -9,9 +9,4 @@ public class BaseFlag {
 	base=bb;
 	flag=fl;
     }
-
-    public String toString() {
-	String str="("+base+", "+flag+")";
-	return str;
-    }
 }
