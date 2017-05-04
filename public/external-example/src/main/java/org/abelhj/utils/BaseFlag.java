@@ -1,5 +1,8 @@
 package org.abelhj.utils;
 
+import htsjdk.samtools.SAMFlag;
+import org.broadinstitute.gatk.utils.sam.GATKSAMRecord;
+
 public class BaseFlag {
 
     protected char base;
@@ -9,6 +12,20 @@ public class BaseFlag {
 	base=bb;
 	flag=fl;
     }
+
+    public BaseFlag(char bb, GATKSAMRecord rec) {
+	base=bb;
+	int flag=0;
+	if(rec.getFirstOfPairFlag()) {
+	    flag+=SAMFlag.FIRST_OF_PAIR.intValue();
+	}
+	if(rec.getSecondOfPairFlag()) {
+	    flag+=SAMFlag.SECOND_OF_PAIR.intValue();
+	}
+	if(rec.getReadNegativeStrandFlag()) {
+	    flag+=SAMFlag.READ_REVERSE_STRAND.intValue();
+	}
+    }	
 
     public String toString() {
 	String str="("+base+", "+flag+")";

@@ -127,10 +127,9 @@ public class BaseFlagMapBC {
 	return namplicons;
     }
 
-    public BaseFlagMap  calcOverallVAF(boolean biased, PrintStream bcout, boolean debug) {
+    public BaseFlagMap  aggregateOverBarcodes(PrintStream bcout) {
 
 	boolean comma=false;
-	int minDist=20;
 
 	BaseFlagMap overallMap=new BaseFlagMap();
 	for(String rg : bcmap.keySet()) {
@@ -145,7 +144,7 @@ public class BaseFlagMapBC {
 		mc='N';
 	      }
 	      overallMap.add(new BaseFlag(mc, flag));
-	      if(debug) {
+	      if(bcout!=null) {
 		bfm.print();
 		if(comma) {
 		    bcout.print(",");
@@ -155,7 +154,7 @@ public class BaseFlagMapBC {
 	      }
 	  }
 	}
-	if(debug) {
+	if(bcout!=null) {
 	    bcout.println();
 	}
 	return overallMap;

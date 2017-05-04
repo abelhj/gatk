@@ -83,25 +83,13 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	GenomeLoc loc=pileup.getLocation();
         char refbase=(char)ref.getBase();
 	BaseFlagMap bfmap=new BaseFlagMap();
-	BaseFlagMapBC ecmap=new BaseFlagMapBC( loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
+	BaseFlagMapBC ecmap=new BaseFlagMapBC(loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
         
         for(PileupElement p : pileup) {
 
 	    GATKSAMRecord pread=p.getRead();
 	    if(pread.getIntegerAttribute("NM")<maxNM && p.getOffset()>=minOffset && p.getOffset()<=pread.getReadLength()-minOffset) {
-
-		String rg=pread.getStringAttribute("X0");
-		int flag=0;
-		if(pread.getFirstOfPairFlag()) {
-		    flag+=SAMFlag.FIRST_OF_PAIR.intValue();
-		}
-		if(pread.getSecondOfPairFlag()) {
-		    flag+=SAMFlag.SECOND_OF_PAIR.intValue();
-		}
-		if(pread.getReadNegativeStrandFlag()) {
-		    flag+=SAMFlag.READ_REVERSE_STRAND.intValue();
-		} 
-		BaseFlagBC bfl=new BaseFlagBC((char)p.getBase(), flag, rg, pread.getSoftStart(), pread.getSoftEnd());
+		BaseFlagBC bfl=new BaseFlagBC((char)p.getBase(), pread);
 		ecmap.add(bfl);
 		bfmap.add(bfl);           
 	    }
@@ -130,7 +118,7 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	    if(pval<1e-5 && maxDiff>0.05) {
 		ampBias=true;
 	    }
-	    bfmapEC=ecmap.calcOverallVAF(ampBias, bcout, debug);
+	    bfmapEC=ecmap.aggregateOverBarcodes(bcout);
 	    altEC=bfmapEC.maxBase(refbase, !allowN);
 	    if(altEC=='N') {
 		altEC='.';
