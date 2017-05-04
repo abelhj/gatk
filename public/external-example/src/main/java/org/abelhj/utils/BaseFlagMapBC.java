@@ -10,7 +10,7 @@ import org.broadinstitute.gatk.utils.GenomeLoc;
 
 import htsjdk.samtools.SAMFlag;
 
-public class BaseFlagLocMap {
+public class BaseFlagMapBC {
 
     private Map<Integer, Integer > endPos=null;
     private Map<Integer, Map<String, BaseFlagMap> > map=null;
@@ -25,7 +25,7 @@ public class BaseFlagLocMap {
     private int refPos;
     private int namplicons=-99;
 
-    public BaseFlagLocMap(GenomeLoc pos, char ref, int minPerAmp, double minPct, int minCount){
+    public BaseFlagMapBC(GenomeLoc pos, char ref, int minPerAmp, double minPct, int minCount){
 	refBase=ref;
 	map=new LinkedHashMap<Integer, Map<String, BaseFlagMap> >();
 	bcmap=new LinkedHashMap<String, Map<Integer, BaseFlagMap> >();
@@ -40,11 +40,11 @@ public class BaseFlagLocMap {
     public void add(BaseFlagBC bfl) {
 
 	if(map.containsKey(bfl.getStart()) && map.get(bfl.getStart()).containsKey(bfl.getBarcode())) {
-	    map.get(bfl.getStart()).get(bfl.getBarcode()).add(bf);
-            bcmap.get(bfl.getBarcode()).get(bfl.getStart()).add(bf);
+	    map.get(bfl.getStart()).get(bfl.getBarcode()).add(bfl);
+            bcmap.get(bfl.getBarcode()).get(bfl.getStart()).add(bfl);
 	} else {
 	    BaseFlagMap bfm=new BaseFlagMap();
-	    bfm.add(bf);
+	    bfm.add(bfl);
 
 	    if(!map.containsKey(bfl.getStart())) {
 		map.put(bfl.getStart(), new LinkedHashMap<String, BaseFlagMap>());
@@ -58,7 +58,7 @@ public class BaseFlagLocMap {
 		bcmap.put(bfl.getBarcode(), new LinkedHashMap<Integer, BaseFlagMap>());
 	    }
 	    if(!bcmap.get(bfl.getBarcode()).containsKey(bfl.getStart())) {
-		bcmap.get(getBarcode()).put(bfl.getStart(), bfm);
+		bcmap.get(bfl.getBarcode()).put(bfl.getStart(), bfm);
 	    }
 	}
     }
@@ -135,14 +135,6 @@ public class BaseFlagLocMap {
 	BaseFlagMap overallMap=new BaseFlagMap();
 	for(String rg : bcmap.keySet()) {
 	    BaseFlagMap bfm=new BaseFlagMap();
-	    // if there is amplicon bias, ignore readgroup where variant is too close to either soft-clipped end.
-	    if(biased) {     
-		int start=bcmap.get(rg).keySet().iterator().next();
-		int end=endPos.get(start);
-		if(Math.abs(start-refPos)<minDist || Math.abs(end-refPos)<minDist) {
-		    continue;
-		}
-	    }
 	    for(int cstart : bcmap.get(rg).keySet()) {
 		bfm.add(bcmap.get(rg).get(cstart));
 	    }

@@ -1,5 +1,6 @@
 package org.abelhj.utils;
 
+import java.util.List;
 import java.util.ArrayList;
 
 public class ChiSquareUtils {
@@ -16,7 +17,7 @@ public class ChiSquareUtils {
         ACM TOMS June 1985, page 185
     */
 
-    public static double maxDiffVAF(ArrayList<Integer> c1, ArrayList<Integer> c2) {
+    public static double maxDiffVAF(List<Integer> c1, List<Integer> c2) {
 	
 	double max=0;
 	if(c1.size()==1) {
@@ -33,7 +34,7 @@ public class ChiSquareUtils {
 	return max;
     }
 	    
-    public static double chiSquare(ArrayList<Integer> c1, ArrayList<Integer> c2) {
+    public static double chiSquare(List<Integer> c1, List<Integer> c2) {
 
 	int[][] counts=new int[c1.size()][2];
 	for(int i=0; i<c1.size(); i++) {

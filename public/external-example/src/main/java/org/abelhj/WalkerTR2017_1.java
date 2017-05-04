@@ -26,10 +26,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
 
-import org.abelhj.utils.BaseFlagLocMap;
-import org.abelhj.utils.BaseFlagMap;
-import org.abelhj.utils.BaseFlagLoc;
 import org.abelhj.utils.BaseFlag;
+import org.abelhj.utils.BaseFlagMap;
+import org.abelhj.utils.BaseFlagBC;
+import org.abelhj.utils.BaseFlagMapBC;
+
 
 @Reference(window=@Window(start=-1, stop=1))
 public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
@@ -44,10 +45,10 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
     double minPercentRG=0.9;
     @Argument(fullName = "minCountPerBC", shortName = "minCtBC", doc= "Minimum number reads to accept bar code family", required=false)
     int minCountPerBC=1;
-    @Argument(fullName = "debug", shortName = "debug", doc= "1 for verbose output", required=false)
-    int debug=0;
-    @Argument(fullName = "discardN", shortName = "discardN", doc= "alt is most common non-ref base excluding Ns", required=false)
-    int discardN=0;
+    @Argument(fullName = "debug", shortName = "debug", doc= "true for verbose output", required=false)
+    boolean debug=false;
+    @Argument(fullName = "allowN", shortName = "allowN", doc= "allow N as alt base", required=false)
+    boolean allowN=false;
     @Argument(fullName = "bcfile", shortName = "bc", doc= "barcode list", required=false)
     String bcfile=null;
     @Argument(fullName = "minOffset", shortName = "minOffset", doc="min offset from either end of read", required=false)
@@ -55,17 +56,12 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
     @Argument(fullName = "maxNM", shortName = "maxNM", doc="filter reads with edit distance greater than maxNM", required=false)
     int maxNM=99;
 
-    boolean skipN=false;
     PrintStream bcout=null;
-    boolean debugBool=false;
     int minPerAmp=50;
     
     public void initialize() {
-	if(discardN==1) {
-	    skipN=true;
-	}
-	if(debug==1) {
-	    debugBool=true;
+
+	if(debug) {
 	    if(bcfile!=null) {
 		try {
 		    bcout=new PrintStream(new File(bcfile));
@@ -87,7 +83,7 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	GenomeLoc loc=pileup.getLocation();
         char refbase=(char)ref.getBase();
 	BaseFlagMap bfmap=new BaseFlagMap();
-	BaseFlagLocMap ecmap=new BaseFlagLocMap( loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
+	BaseFlagMapBC ecmap=new BaseFlagMapBC( loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
         
         for(PileupElement p : pileup) {
 
@@ -105,8 +101,8 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 		if(pread.getReadNegativeStrandFlag()) {
 		    flag+=SAMFlag.READ_REVERSE_STRAND.intValue();
 		} 
-		BaseFlagLoc bfl=new BaseFlagLoc((char)p.getBase(), flag, pread.getSoftStart(), pread.getSoftEnd());
-		ecmap.add(bfl, rg);
+		BaseFlagBC bfl=new BaseFlagBC((char)p.getBase(), flag, rg, pread.getSoftStart(), pread.getSoftEnd());
+		ecmap.add(bfl);
 		bfmap.add(bfl);           
 	    }
         }
@@ -127,16 +123,15 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	    bfmapEC=new BaseFlagMap();
 	} else {
 	    vaf=bfmap.calcVAF(refbase, alt);
-	    ecmap.setAlt(alt);
-	    ecmap.calcAmpBias(debugBool);
+	    ecmap.calcAmpBias(debug, alt);
 	    pval=ecmap.getPval();
 	    namplicons=ecmap.getNAmplicon();
 	    maxDiff=ecmap.getMaxDiffVAF();
 	    if(pval<1e-5 && maxDiff>0.05) {
 		ampBias=true;
 	    }
-	    bfmapEC=ecmap.calcOverallVAF(ampBias, bcout, debugBool);
-	    altEC=bfmapEC.maxBase(refbase, false);
+	    bfmapEC=ecmap.calcOverallVAF(ampBias, bcout, debug);
+	    altEC=bfmapEC.maxBase(refbase, !allowN);
 	    if(altEC=='N') {
 		altEC='.';
 	    } else {
