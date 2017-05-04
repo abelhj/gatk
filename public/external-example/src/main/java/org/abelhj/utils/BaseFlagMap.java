@@ -2,7 +2,7 @@ package org.abelhj.utils;
 
 import java.util.Map;
 import java.util.Array;
-import java.util.List();
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import htsjdk.samtools.SAMFlag;
@@ -17,17 +17,12 @@ public class BaseFlagMap {
 
 
     public BaseFlagMap(){
-        nucs=new ArrayList<Character>();
-        nucs.add('A');
-        nucs.add('C');
-        nucs.add('G');
-        nucs.add('T');
-        nucs.add('N');
-        flags=new ArrayList<Integer>();
-        flags.add(SAMFlag.FIRST_OF_PAIR.intValue());
-	flags.add(SAMFlag.SECOND_OF_PAIR.intValue());
-	flags.add(SAMFlag.FIRST_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue());
-	flags.add(SAMFlag.SECOND_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue());
+        nucs=new ArrayList<Character>(Arrays.asList('A', 'C', 'G', 'T', 'N'));
+        flags=new ArrayList<Integer>(Arrays.asList(
+						   SAMFlag.FIRST_OF_PAIR.intValue(),
+						   SAMFlag.SECOND_OF_PAIR.intValue(),
+						   SAMFlag.FIRST_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue(),
+						   SAMFlag.SECOND_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue()));
         map=new LinkedHashMap<Character, Map<Integer,Integer > >();
         for(Character c : nucs) {
             Map<Integer, Integer > temp=new LinkedHashMap<Integer, Integer >();
@@ -38,31 +33,24 @@ public class BaseFlagMap {
         }
     }
 
-    public void fill(ArrayList<BaseFlag> list) {
+    public void fill(List<BaseFlag> list) {
 	for(BaseFlag val : list) 
 	    add(val);
     }
 
     public boolean add(BaseFlag val) {
-        if(nucs.contains(val.base) && flags.contains(val.flag)) {
-            map.get(val.base).put(val.flag, map.get(val.base).get(val.flag)+1);
-            return true;
-        } else return false;
-    }
-
-    public boolean add(BaseFlagLoc val) {
-	if(nucs.contains(val.base) && flags.contains(val.flag)) {
-            map.get(val.base).put(val.flag, map.get(val.base).get(val.flag)+1);
+        if(nucs.contains(val.getBase()) && flags.contains(val.getFlag())) {
+            map.get(val.getBase()).put(val.getFlag(), map.get(val.getBase()).get(val.getFlag())+1);
             return true;
         } else return false;
     }
 
 
-    public void add(BaseFlagMap bfm1) {
+    public void add(BaseFlagMap bfm) {
 	for (Character c : nucs) {
 	    for (Integer f : flags ) {
 		int oldval=map.get(c).get(f);
-		map.get(c).put(f, oldval+bfm1.sum(c, f));
+		map.get(c).put(f, oldval+bfm.sum(c, f));
 	    }
 	}
     }
@@ -126,8 +114,8 @@ public class BaseFlagMap {
         String ret="";
         if(nucs.contains(c)) {
             ret+=sum(c)+":";
-            int or1=sum(c, 80)+sum(c,128);
-            int or2=sum(c, 64)+sum(c, 144);
+	    int or1=sum(c, SAMFlag.FIRST_OF_PAIR.intValue())+sum(c, SAMFlag.SECOND_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue());
+            int or2=sum(c, SAMFlag.SECOND_OF_PAIR.intValue())+sum(c,  SAMFlag.FIRST_OF_PAIR.intValue()+SAMFlag.READ_REVERSE_STRAND.intValue());
             ret+=or1+","+or2+";";
         } else {
             ret+=".:.,.;";
