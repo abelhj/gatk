@@ -42,10 +42,10 @@ public class BaseFlagMapBCNoAmp {
 	BaseFlagMap overallMap=new BaseFlagMap();
 	for(String rg : bcmap.keySet()) {
 	    BaseFlagMap bfm=bcmap.get(rg);
-            if(bfm.sum()>=minCountPerBC) {
+            if( bfm.sum()>=minCountPerBC ) {
 	      char mc=bfm.maxBase();
 	      int flag=bfm.maxFlag();
-	      if(bfm.sum(mc)*1.0/bfm.sum()< minPercentRG ) {
+	      if(bfm.sum(mc)*1.0/bfm.sum()< minPercentRG || bfm.sum(mc)<1 ) {
 		mc='N';
 	      }
 	      overallMap.add(new BaseFlag(mc, flag));

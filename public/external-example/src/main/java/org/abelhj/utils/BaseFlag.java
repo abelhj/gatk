@@ -15,7 +15,7 @@ public class BaseFlag {
 
     public BaseFlag(char bb, GATKSAMRecord rec) {
 	base=bb;
-	int flag=0;
+	flag=0;
 	if(rec.getFirstOfPairFlag()) {
 	    flag+=SAMFlag.FIRST_OF_PAIR.intValue();
 	}
