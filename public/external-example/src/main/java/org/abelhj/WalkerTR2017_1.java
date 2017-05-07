@@ -73,6 +73,9 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 		System.exit(1);
 	     }
 	}
+	String nonbchead="#CHROM\tPOS\tREF\tALT\tDEPTH\tVAF\tREFCTS\tALTCTS\tALLCTS";
+	String bchead="UNIQ_BC\tALTEC\tDEPTHEC\tVAFEC\tREFCTSEC\tALTCTSEC\tALLCTSEC\tBEFORE\tAFTER\tAMPBIAS\tMAXDIFF\tPVAL\tNAMPS";
+	System.out.println(nonbchead+"\t"+bchead);
     }
 
     public Integer map(RefMetaDataTracker tracker, ReferenceContext ref, AlignmentContext context) {
@@ -128,7 +131,7 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	}
 	String [] chrpos=loc.toString().split(":");
 	String nonbcstr=chrpos[0]+"\t"+chrpos[1]+"\t"+refbase+"\t"+alt+"\t"+pileup.getBases().length+"\t"+String.format("%.4e", vaf)+"\t"+bfmap.printSums(refbase)+"\t"+bfmap.printSums(alt)+"\t"+bfmap.printSums();
-	String bcstr=altEC+"\t"+bfmapEC.sum()+"\t"+String.format("%.4e", vafEC)+"\t"+bfmapEC.printSums(refbase)+"\t"+bfmapEC.printSums(altEC)+"\t"+bfmapEC.printSums();
+	String bcstr=ecmap.getTotalBarcodes()+"\t"+altEC+"\t"+bfmapEC.sum()+"\t"+String.format("%.4e", vafEC)+"\t"+bfmapEC.printSums(refbase)+"\t"+bfmapEC.printSums(altEC)+"\t"+bfmapEC.printSums();
 	System.out.print(nonbcstr+"\t"+bcstr+"\t"+(char)ref.getBases()[0]+"\t"+(char)ref.getBases()[2]+"\t"+ampBias+"\t"+maxDiff+"\t"+pval+"\t"+namplicons+"\n");
         return 1;
     }

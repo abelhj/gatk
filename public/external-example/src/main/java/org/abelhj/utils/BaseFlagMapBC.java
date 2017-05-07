@@ -127,6 +127,10 @@ public class BaseFlagMapBC {
 	return namplicons;
     }
 
+    public int getTotalBarcodes() {
+	return bcmap.keySet().size();
+    }
+
     public BaseFlagMap  aggregateOverBarcodes(PrintStream bcout) {
 
 	boolean comma=false;
