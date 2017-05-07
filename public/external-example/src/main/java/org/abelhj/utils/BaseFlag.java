@@ -4,7 +4,7 @@ import htsjdk.samtools.SAMFlag;
 import org.broadinstitute.gatk.utils.sam.GATKSAMRecord;
 
 public class BaseFlag {
-
+   
     protected char base;
     protected int flag;
 
