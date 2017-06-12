@@ -33,6 +33,22 @@ public class ChiSquareUtils {
 	}
 	return max;
     }
+
+    public static double maxVAF(List<Integer> c1, List<Integer> c2) {
+	
+	double max=0;
+	if(c1.size()==1) {
+	    return 0;
+	}
+	for(int i=0; i<c1.size(); i++) {
+	    double curVAF=c2.get(i)*1.0/(c2.get(i)+c1.get(i));
+	    if(curVAF>max) {
+		max=curVAF;
+	    }
+	}
+	return max;
+    }
+
 	    
     public static double chiSquare(List<Integer> c1, List<Integer> c2) {
 

@@ -24,6 +24,8 @@ public class BaseFlagMapBC {
     private double pvalUncorr=-99;
     private int refPos;
     private int namplicons=-99;
+    private String VAFString=null;
+    private double maxVAF=-99;
 
     public BaseFlagMapBC(GenomeLoc pos, char ref, int minPerAmp, double minPct, int minCount){
 	refBase=ref;
@@ -69,6 +71,7 @@ public class BaseFlagMapBC {
 	List<Integer> refct=new ArrayList<Integer>();
 	List<Integer> altct=new ArrayList<Integer>();
 	List<Integer> ends=new ArrayList<Integer>();
+	String str="";
 	
 	for (int cstart : map.keySet()) {
 	    if(map.get(cstart).keySet().size()>=minBCPerAmp) {
@@ -80,18 +83,22 @@ public class BaseFlagMapBC {
 		    char maxBase=map.get(cstart).get(bc).maxBase(false);
 		    int maxCt=bfm.sum(maxBase);
 		    int total=bfm.sum();
-
-		    if( maxCt*1.0/total > minPercentRG && total > minCountPerBC) {
+		    if( maxCt*1.0/total > minPercentRG && total >= minCountPerBC) {
 			bf.add(new BaseFlag(maxBase, SAMFlag.FIRST_OF_PAIR.intValue()));
 		    }		
 		}
-		refct.add(bf.sum(refBase));
-		altct.add(bf.sum(altBase));
+		int altct_temp=bf.sum(altBase);
+		int refct_temp=bf.sum(refBase);
+		refct.add(refct_temp);
+		altct.add(altct_temp);
 		ends.add(endPos.get(cstart));
+		str+=(cstart+":"+refct_temp+","+altct_temp+";");
 	    }
 	}
 	diffVAF=ChiSquareUtils.maxDiffVAF(refct, altct);
 	pvalUncorr=ChiSquareUtils.chiSquare(refct, altct);
+	maxVAF=ChiSquareUtils.maxVAF(refct, altct);
+        VAFString=str;
 	namplicons=refct.size();
 	if(debug) {
 	  System.err.println(diffVAF+"\t"+pvalUncorr);
@@ -101,9 +108,17 @@ public class BaseFlagMapBC {
 	}
     }
 
+
     public void valueUnsetError(String var) {
 	System.err.println("Error:  Value of "+var+"unset--need to calculate amplicon bias first.\n");
 	System.exit(1);
+    }
+
+    public String getVAFString() {
+	if(VAFString==null) {
+	    valueUnsetError("VAF string");
+	}
+	return VAFString;
     }
 
     public double getPval() {
@@ -118,6 +133,13 @@ public class BaseFlagMapBC {
 	    valueUnsetError("diff");
 	}
 	return diffVAF;
+    }
+
+    public double getMaxVAF() {
+	if(maxVAF<-98) {
+	    valueUnsetError("max");
+	}
+	return maxVAF;
     }
 
     public int getNAmplicon() {

@@ -74,7 +74,7 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	     }
 	}
 	String nonbchead="#CHROM\tPOS\tREF\tALT\tDEPTH\tVAF\tREFCTS\tALTCTS\tALLCTS";
-	String bchead="UNIQ_BC\tALTEC\tDEPTHEC\tVAFEC\tREFCTSEC\tALTCTSEC\tALLCTSEC\tBEFORE\tAFTER\tAMPBIAS\tMAXDIFF\tPVAL\tNAMPS";
+	String bchead="UNIQ_BC\tALTEC\tDEPTHEC\tVAFEC\tREFCTSEC\tALTCTSEC\tALLCTSEC\tBEFORE\tAFTER\tAMPBIAS\tMAXDIFF\tPVAL\tNAMPS\tMAXVAF\tVAFSTR";
 	System.out.println(nonbchead+"\t"+bchead);
     }
 
@@ -107,7 +107,9 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 
 	double pval=1;
 	double maxDiff=0;
+	double maxVAF=0;
 	int namplicons=0;
+	String vafstr="";
 
 	if(alt=='N') {
 	    alt='.';
@@ -118,6 +120,8 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	    pval=ecmap.getPval();
 	    namplicons=ecmap.getNAmplicon();
 	    maxDiff=ecmap.getMaxDiffVAF();
+	    maxVAF=ecmap.getMaxVAF();
+	    vafstr=ecmap.getVAFString();
 	    if(pval<1e-5 && maxDiff>0.05) {
 		ampBias=true;
 	    }
@@ -132,7 +136,7 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	String [] chrpos=loc.toString().split(":");
 	String nonbcstr=chrpos[0]+"\t"+chrpos[1]+"\t"+refbase+"\t"+alt+"\t"+pileup.getBases().length+"\t"+String.format("%.4e", vaf)+"\t"+bfmap.printSums(refbase)+"\t"+bfmap.printSums(alt)+"\t"+bfmap.printSums();
 	String bcstr=ecmap.getTotalBarcodes()+"\t"+altEC+"\t"+bfmapEC.sum()+"\t"+String.format("%.4e", vafEC)+"\t"+bfmapEC.printSums(refbase)+"\t"+bfmapEC.printSums(altEC)+"\t"+bfmapEC.printSums();
-	System.out.print(nonbcstr+"\t"+bcstr+"\t"+(char)ref.getBases()[0]+"\t"+(char)ref.getBases()[2]+"\t"+ampBias+"\t"+maxDiff+"\t"+pval+"\t"+namplicons+"\n");
+	System.out.print(nonbcstr+"\t"+bcstr+"\t"+(char)ref.getBases()[0]+"\t"+(char)ref.getBases()[2]+"\t"+ampBias+"\t"+maxDiff+"\t"+pval+"\t"+namplicons+"\t"+maxVAF+"\t"+vafstr+"\n");
         return 1;
     }
    
