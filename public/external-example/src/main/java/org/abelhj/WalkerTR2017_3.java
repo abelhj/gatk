@@ -31,8 +31,8 @@ import java.util.List;
 
 import org.abelhj.utils.BaseFlag;
 import org.abelhj.utils.BaseFlagMap;
-import org.abelhj.utils.BaseFlagBC;
-import org.abelhj.utils.BaseFlagMapBC;
+import org.abelhj.utils.BaseFlagAmpBC;
+import org.abelhj.utils.BaseFlagMapAmpBC;
 import org.abelhj.utils.Amplicon;
 
 
@@ -91,31 +91,14 @@ public class WalkerTR2017_3 extends LocusWalker<Integer,Integer>  {
 	GenomeLoc loc=pileup.getLocation();
         char refbase=(char)ref.getBase();
 	BaseFlagMap bfmap=new BaseFlagMap();
-	BaseFlagMapBC ecmap=new BaseFlagMapBC(loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
+	BaseFlagMapBC ecmap=new BaseFlagMapAmpBC(loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
         
         for(PileupElement p : pileup) {
 
 	    GATKSAMRecord pread=p.getRead();
-	    String chr=pread.getReferenceName();
-	    int start=pread.getAlignmentStart();
-	    int mindist=100;
-	    Amplicon bestAmp=null;
-	    for(int i: ampliconMap.get(chr).keySet()) {
-		if(Math.abs(i-start)<1000) {
-		    for(Amplicon amp : ampliconMap.get(chr).get(i)) {
-			int dist=amp.getDist(pread);
-			if(dist<mindist) {
-			    mindist=dist;
-			    bestAmp=amp;
-			}
-		    }
-		}
-	    }
-	    System.err.println(pread.getSAMString());
-	    System.err.println(bestAmp+"\t"+mindist);
             
 	    if(pread.getIntegerAttribute("NM")<maxNM && p.getOffset()>=minOffset && p.getOffset()<=pread.getReadLength()-minOffset) {
-		BaseFlagBC bfl=new BaseFlagBC((char)p.getBase(), pread);
+		BaseFlagAmpBC bfl=new BaseFlagAmpBC((char)p.getBase(), pread);
 		ecmap.add(bfl);
 		bfmap.add(bfl);           
 	    }

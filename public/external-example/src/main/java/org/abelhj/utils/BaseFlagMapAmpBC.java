@@ -8,13 +8,13 @@ import java.io.PrintStream;
 
 import org.broadinstitute.gatk.utils.GenomeLoc;
 
+
 import htsjdk.samtools.SAMFlag;
 
 public class BaseFlagMapAmpBC {
 
-    private Map<Integer, Integer > endPos=null;
-    private Map<Integer, Map<String, BaseFlagMap> > map=null;
-    private Map<String, Map<Integer, BaseFlagMap> > bcmap=null;
+    private Map<String, Map<String, BaseFlagMap> > map=null;
+    private Map<String, Map<String, BaseFlagMap> > bcmap=null;
     private int minBCPerAmp=50;
     private char refBase='\0';
     private double minPercentRG=0.8;
@@ -53,7 +53,6 @@ public class BaseFlagMapAmpBC {
 
 	    if(!map.containsKey(amp)) {
 		map.put(amp, new LinkedHashMap<String, BaseFlagMap>());
-		//endPos.put(bfl.getStart(), bfl.getEnd());
 	    } 
 	    if(!map.get(amp).containsKey(barcode)) {
 		map.get(amp).put(barcode, bfm);
