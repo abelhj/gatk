@@ -10,7 +10,7 @@ import org.broadinstitute.gatk.utils.GenomeLoc;
 
 import htsjdk.samtools.SAMFlag;
 
-public class BaseFlagMapAmpBC {
+public class BaseFlagMapBC {
 
     private Map<Integer, Integer > endPos=null;
     private Map<Integer, Map<String, BaseFlagMap> > map=null;
@@ -39,31 +39,28 @@ public class BaseFlagMapAmpBC {
 	minCountPerBC=minCount;
     }
     
-    public void add(BaseFlagAmpBC bfl) {
+    public void add(BaseFlagBC bfl) {
 
-	String amp=bfl.getAmp();
-	String barcode=bfl.getBarcode();
-
-	if(map.containsKey(amp) && map.get(amp).containsKey(barcode)) {
-	    map.get(amp).get(barcode).add(bfl);
-            bcmap.get(barcode).get(amp).add(bfl);
+	if(map.containsKey(bfl.getStart()) && map.get(bfl.getStart()).containsKey(bfl.getBarcode())) {
+	    map.get(bfl.getStart()).get(bfl.getBarcode()).add(bfl);
+            bcmap.get(bfl.getBarcode()).get(bfl.getStart()).add(bfl);
 	} else {
 	    BaseFlagMap bfm=new BaseFlagMap();
 	    bfm.add(bfl);
 
-	    if(!map.containsKey(amp)) {
-		map.put(amp, new LinkedHashMap<String, BaseFlagMap>());
-		//endPos.put(bfl.getStart(), bfl.getEnd());
+	    if(!map.containsKey(bfl.getStart())) {
+		map.put(bfl.getStart(), new LinkedHashMap<String, BaseFlagMap>());
+		endPos.put(bfl.getStart(), bfl.getEnd());
 	    } 
-	    if(!map.get(amp).containsKey(barcode)) {
-		map.get(amp).put(barcode, bfm);
+	    if(!map.get(bfl.getStart()).containsKey(bfl.getBarcode())) {
+		map.get(bfl.getStart()).put(bfl.getBarcode(), bfm);
 	    }
 
-	    if(!bcmap.containsKey(barcode)) {
-		bcmap.put(barcode, new LinkedHashMap<String, BaseFlagMap>());
+	    if(!bcmap.containsKey(bfl.getBarcode())) {
+		bcmap.put(bfl.getBarcode(), new LinkedHashMap<Integer, BaseFlagMap>());
 	    }
-	    if(!bcmap.get(barcode).containsKey(amp)) {
-		bcmap.get(barcode).put(amp, bfm);
+	    if(!bcmap.get(bfl.getBarcode()).containsKey(bfl.getStart())) {
+		bcmap.get(bfl.getBarcode()).put(bfl.getStart(), bfm);
 	    }
 	}
     }
@@ -73,18 +70,17 @@ public class BaseFlagMapAmpBC {
 
 	List<Integer> refct=new ArrayList<Integer>();
 	List<Integer> altct=new ArrayList<Integer>();
-	List<String> amps=new ArrayList<String>();
+	List<Integer> ends=new ArrayList<Integer>();
 	String str="";
-
-	for (String amp : map.keySet()) {
-
-	    if(map.get(amp).keySet().size()>=minBCPerAmp) {
+	
+	for (int cstart : map.keySet()) {
+	    if(map.get(cstart).keySet().size()>=minBCPerAmp) {
        
 		BaseFlagMap bf=new BaseFlagMap();
-		for(String bc : map.get(amp).keySet()) {
+		for(String bc : map.get(cstart).keySet()) {
 		    
-		    BaseFlagMap bfm=map.get(amp).get(bc);
-		    char maxBase=map.get(amp).get(bc).maxBase(false);
+		    BaseFlagMap bfm=map.get(cstart).get(bc);
+		    char maxBase=map.get(cstart).get(bc).maxBase(false);
 		    int maxCt=bfm.sum(maxBase);
 		    int total=bfm.sum();
 		    if( maxCt*1.0/total > minPercentRG && total >= minCountPerBC) {
@@ -95,8 +91,8 @@ public class BaseFlagMapAmpBC {
 		int refct_temp=bf.sum(refBase);
 		refct.add(refct_temp);
 		altct.add(altct_temp);
-		amps.add(amp);
-		str+=(amp+":"+refct_temp+","+altct_temp+";");
+		ends.add(endPos.get(cstart));
+		str+=(cstart+":"+refct_temp+","+altct_temp+";");
 	    }
 	}
 	diffVAF=ChiSquareUtils.maxDiffVAF(refct, altct);
@@ -107,7 +103,7 @@ public class BaseFlagMapAmpBC {
 	if(debug) {
 	  System.err.println(diffVAF+"\t"+pvalUncorr);
 	  for(int i=0; i<refct.size(); i++) {
-	      System.err.println(i+"\t"+refct.get(i)+"\t"+altct.get(i)+"\t"+amps.get(i));
+	      System.err.println(i+"\t"+refct.get(i)+"\t"+altct.get(i)+"\t"+ends.get(i));
 	  }
 	}
     }
@@ -164,8 +160,8 @@ public class BaseFlagMapAmpBC {
 	BaseFlagMap overallMap=new BaseFlagMap();
 	for(String rg : bcmap.keySet()) {
 	    BaseFlagMap bfm=new BaseFlagMap();
-	    for(String amp : bcmap.get(rg).keySet()) {
-		bfm.add(bcmap.get(rg).get(amp));
+	    for(int cstart : bcmap.get(rg).keySet()) {
+		bfm.add(bcmap.get(rg).get(cstart));
 	    }
             if(bfm.sum()>=minCountPerBC) {
 	      char mc=bfm.maxBase();

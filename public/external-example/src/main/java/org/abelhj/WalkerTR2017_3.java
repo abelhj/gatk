@@ -91,7 +91,7 @@ public class WalkerTR2017_3 extends LocusWalker<Integer,Integer>  {
 	GenomeLoc loc=pileup.getLocation();
         char refbase=(char)ref.getBase();
 	BaseFlagMap bfmap=new BaseFlagMap();
-	BaseFlagMapBC ecmap=new BaseFlagMapAmpBC(loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
+	BaseFlagMapAmpBC ecmap=new BaseFlagMapAmpBC(loc, refbase, minPerAmp, minPercentRG, minCountPerBC);
         
         for(PileupElement p : pileup) {
 
@@ -117,20 +117,22 @@ public class WalkerTR2017_3 extends LocusWalker<Integer,Integer>  {
 	int namplicons=0;
 	String vafstr="";
 
+	ecmap.calcAmpBias(debug, alt);
+	pval=ecmap.getPval();
+	namplicons=ecmap.getNAmplicon();
+	maxDiff=ecmap.getMaxDiffVAF();
+	maxVAF=ecmap.getMaxVAF();
+	vafstr=ecmap.getVAFString();
+	if(pval<1e-5 && maxDiff>0.05) {
+	    ampBias=true;
+	}
+
+
 	if(alt=='N') {
 	    alt='.';
 	    bfmapEC=new BaseFlagMap();
 	} else {
 	    vaf=bfmap.calcVAF(refbase, alt);
-	    ecmap.calcAmpBias(debug, alt);
-	    pval=ecmap.getPval();
-	    namplicons=ecmap.getNAmplicon();
-	    maxDiff=ecmap.getMaxDiffVAF();
-	    maxVAF=ecmap.getMaxVAF();
-	    vafstr=ecmap.getVAFString();
-	    if(pval<1e-5 && maxDiff>0.05) {
-		ampBias=true;
-	    }
 	    bfmapEC=ecmap.aggregateOverBarcodes(bcout);
 	    altEC=bfmapEC.maxBase(refbase, !allowN);
 	    if(altEC=='N') {

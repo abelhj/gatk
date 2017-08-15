@@ -27,11 +27,10 @@ public class BaseFlagMapAmpBC {
     private String VAFString=null;
     private double maxVAF=-99;
 
-    public BaseFlagMapBC(GenomeLoc pos, char ref, int minPerAmp, double minPct, int minCount){
+    public BaseFlagMapAmpBC(GenomeLoc pos, char ref, int minPerAmp, double minPct, int minCount){
 	refBase=ref;
-	map=new LinkedHashMap<Integer, Map<String, BaseFlagMap> >();
-	bcmap=new LinkedHashMap<String, Map<Integer, BaseFlagMap> >();
-	endPos=new LinkedHashMap<Integer, Integer>();
+	map=new LinkedHashMap<String, Map<String, BaseFlagMap> >();
+	bcmap=new LinkedHashMap<String, Map<String, BaseFlagMap> >();
 	loc=pos;
 	refPos=loc.getStart();
 	minBCPerAmp=minPerAmp;
@@ -70,43 +69,90 @@ public class BaseFlagMapAmpBC {
 
     public void calcAmpBias(boolean debug, char altBase) {
 
+	if(altBase=='N') {
+	    calcAmpInfo(debug);
+	} else {
+		List<Integer> refct=new ArrayList<Integer>();
+		List<Integer> altct=new ArrayList<Integer>();
+		List<String> amps=new ArrayList<String>();
+		String str="";
+
+		for (String amp : map.keySet()) {
+
+		    if(map.get(amp).keySet().size()>=minBCPerAmp) {
+	       
+			BaseFlagMap bf=new BaseFlagMap();
+			for(String bc : map.get(amp).keySet()) {
+			    
+			    BaseFlagMap bfm=map.get(amp).get(bc);
+			    char maxBase=map.get(amp).get(bc).maxBase(false);
+			    int maxCt=bfm.sum(maxBase);
+			    int total=bfm.sum();
+			    if( maxCt*1.0/total > minPercentRG && total >= minCountPerBC) {
+				bf.add(new BaseFlag(maxBase, SAMFlag.FIRST_OF_PAIR.intValue()));
+			    }		
+			}
+			int altct_temp=bf.sum(altBase);
+			int refct_temp=bf.sum(refBase);
+			refct.add(refct_temp);
+			altct.add(altct_temp);
+			amps.add(amp);
+			str+=(amp+":"+refct_temp+","+altct_temp+";");
+		    }
+		}
+		diffVAF=ChiSquareUtils.maxDiffVAF(refct, altct);
+		pvalUncorr=ChiSquareUtils.chiSquare(refct, altct);
+		maxVAF=ChiSquareUtils.maxVAF(refct, altct);
+	        VAFString=str;
+		namplicons=refct.size();
+		if(debug) {
+		  System.err.println(diffVAF+"\t"+pvalUncorr);
+		  for(int i=0; i<refct.size(); i++) {
+		      System.err.println(i+"\t"+refct.get(i)+"\t"+altct.get(i)+"\t"+amps.get(i));
+		  }
+		}
+	}
+    }
+
+
+    public void calcAmpInfo(boolean debug) {
+
 	List<Integer> refct=new ArrayList<Integer>();
-	List<Integer> altct=new ArrayList<Integer>();
 	List<String> amps=new ArrayList<String>();
 	String str="";
 
 	for (String amp : map.keySet()) {
 
+	    int refcts=0;
 	    if(map.get(amp).keySet().size()>=minBCPerAmp) {
        
 		BaseFlagMap bf=new BaseFlagMap();
 		for(String bc : map.get(amp).keySet()) {
 		    
 		    BaseFlagMap bfm=map.get(amp).get(bc);
-		    char maxBase=map.get(amp).get(bc).maxBase(false);
-		    int maxCt=bfm.sum(maxBase);
 		    int total=bfm.sum();
-		    if( maxCt*1.0/total > minPercentRG && total >= minCountPerBC) {
-			bf.add(new BaseFlag(maxBase, SAMFlag.FIRST_OF_PAIR.intValue()));
+		    if( total >= minCountPerBC) {
+			refcts+=total;
 		    }		
 		}
-		int altct_temp=bf.sum(altBase);
-		int refct_temp=bf.sum(refBase);
-		refct.add(refct_temp);
-		altct.add(altct_temp);
+		refct.add(refcts);
 		amps.add(amp);
-		str+=(amp+":"+refct_temp+","+altct_temp+";");
+		str+=(amp+":"+refcts+",0;");
 	    }
 	}
-	diffVAF=ChiSquareUtils.maxDiffVAF(refct, altct);
-	pvalUncorr=ChiSquareUtils.chiSquare(refct, altct);
-	maxVAF=ChiSquareUtils.maxVAF(refct, altct);
-        VAFString=str;
+	diffVAF=0;
+	pvalUncorr=1;
+	maxVAF=0;
 	namplicons=refct.size();
+	if (namplicons==0) {
+	    VAFString=".";
+	} else {
+	    VAFString=str;
+	}
 	if(debug) {
 	  System.err.println(diffVAF+"\t"+pvalUncorr);
 	  for(int i=0; i<refct.size(); i++) {
-	      System.err.println(i+"\t"+refct.get(i)+"\t"+altct.get(i)+"\t"+amps.get(i));
+	      System.err.println(i+"\t"+refct.get(i)+"\t0\t"+amps.get(i));
 	  }
 	}
     }
