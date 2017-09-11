@@ -151,8 +151,8 @@ org/broadinstitute/gatk/tools/walkers/variantutils/VariantsToTable$4.class
 org/broadinstitute/gatk/tools/walkers/diagnostics/ReadLengthDistribution.class
 org/broadinstitute/gatk/tools/walkers/annotator/interfaces/AnnotationHelpUtils.class
 org/broadinstitute/gatk/tools/walkers/varianteval/VariantEval$EvalCompMatchType.class
-org/broadinstitute/gatk/tools/walkers/variantutils/VariantsToBinaryPed$OutputMode.class
 org/broadinstitute/gatk/tools/walkers/variantutils/VariantsToTable$12.class
+org/broadinstitute/gatk/tools/walkers/variantutils/VariantsToBinaryPed$OutputMode.class
 org/broadinstitute/gatk/tools/walkers/varianteval/util/EvaluationContext.class
 org/broadinstitute/gatk/tools/walkers/varianteval/evaluators/TiTvVariantEvaluator.class
 org/broadinstitute/gatk/tools/walkers/annotator/interfaces/VariantAnnotatorAnnotation.class

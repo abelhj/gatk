@@ -44,8 +44,8 @@ org/broadinstitute/gatk/engine/alignment/reference/bwt/SuffixArrayReader.class
 org/broadinstitute/gatk/engine/samples/Affection.class
 org/broadinstitute/gatk/engine/io/stubs/SAMFileWriterArgumentTypeDescriptor.class
 org/broadinstitute/gatk/engine/alignment/bwa/java/AlignmentMatchSequence.class
-org/broadinstitute/gatk/engine/datasources/reads/ActiveRegionShardBalancer.class
 org/broadinstitute/gatk/engine/datasources/reads/BAMSchedule$BAMScheduleIterator.class
+org/broadinstitute/gatk/engine/datasources/reads/ActiveRegionShardBalancer.class
 org/broadinstitute/gatk/engine/filters/DuplicateReadFilter.class
 org/broadinstitute/gatk/engine/filters/MappingQualityFilter.class
 org/broadinstitute/gatk/engine/io/stubs/OutputStreamArgumentTypeDescriptor.class
@@ -191,8 +191,8 @@ org/broadinstitute/gatk/engine/recalibration/RecalUtils$SOLID_RECAL_MODE.class
 org/broadinstitute/gatk/engine/alignment/bwa/java/AlignerTestHarness.class
 org/broadinstitute/gatk/engine/filters/PlatformUnitFilterHelper.class
 org/broadinstitute/gatk/engine/samples/SampleDB.class
-org/broadinstitute/gatk/engine/filters/DisableableReadFilter.class
 org/broadinstitute/gatk/engine/filters/CountingFilteringIterator$CountingReadFilter.class
+org/broadinstitute/gatk/engine/filters/DisableableReadFilter.class
 org/broadinstitute/gatk/engine/io/storage/VariantContextWriterStorage$TestWriter.class
 org/broadinstitute/gatk/engine/datasources/reads/ShardBalancer.class
 org/broadinstitute/gatk/engine/iterators/PeekingIterator.class
@@ -272,8 +272,8 @@ org/broadinstitute/gatk/engine/datasources/rmd/MappedStreamSegment.class
 org/broadinstitute/gatk/engine/walkers/ActiveRegionWalker.class
 org/broadinstitute/gatk/engine/alignment/bwa/BWAAligner.class
 org/broadinstitute/gatk/engine/resourcemanagement/ThreadAllocation.class
-org/broadinstitute/gatk/engine/alignment/bwa/java/BWAJavaAligner.class
 org/broadinstitute/gatk/engine/alignment/bwa/java/AlignmentState.class
+org/broadinstitute/gatk/engine/alignment/bwa/java/BWAJavaAligner.class
 org/broadinstitute/gatk/engine/datasources/providers/ReadView.class
 org/broadinstitute/gatk/engine/filters/FailsVendorQualityCheckFilter.class
 org/broadinstitute/gatk/engine/HelpEntry.class
@@ -285,12 +285,12 @@ org/broadinstitute/gatk/engine/datasources/reads/LocusShardBalancer$1.class
 org/broadinstitute/gatk/engine/datasources/reads/BAMScheduler.class
 org/broadinstitute/gatk/engine/iterators/MisencodedBaseQualityReadTransformer.class
 org/broadinstitute/gatk/engine/samples/PedReader$MissingPedField.class
-org/broadinstitute/gatk/engine/executive/WindowMaker$WindowMakerIterator.class
 org/broadinstitute/gatk/engine/executive/Accumulator$StandardAccumulator.class
+org/broadinstitute/gatk/engine/executive/WindowMaker$WindowMakerIterator.class
 org/broadinstitute/gatk/engine/iterators/VerifyingSamIterator.class
 org/broadinstitute/gatk/engine/samples/Gender.class
-org/broadinstitute/gatk/engine/traversals/TraverseLociNano$TraverseLociMap.class
 org/broadinstitute/gatk/engine/traversals/TraverseReadsNano$2.class
+org/broadinstitute/gatk/engine/traversals/TraverseLociNano$TraverseLociMap.class
 org/broadinstitute/gatk/engine/filters/BAQReadTransformer.class
 org/broadinstitute/gatk/engine/alignment/reference/packing/CreatePACFromReference.class
 org/broadinstitute/gatk/engine/filters/ReadLengthFilter.class

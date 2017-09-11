@@ -55,6 +55,9 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
     int minOffset=0;
     @Argument(fullName = "maxNM", shortName = "maxNM", doc="filter reads with edit distance greater than maxNM", required=false)
     int maxNM=99;
+    @Argument(fullName = "allPos", shortName = "allPos", doc="output per-barcode stats at all positions", required=false)
+    boolean allPos=false;
+
 
     PrintStream bcout=null;
     int minPerAmp=50;
@@ -109,13 +112,18 @@ public class WalkerTR2017_1 extends LocusWalker<Integer,Integer>  {
 	double maxDiff=0;
 	double maxVAF=0;
 	int namplicons=0;
-	String vafstr="";
+	String vafstr=".";
+
 
 	if(alt=='N') {
 	    alt='.';
-	    bfmapEC=new BaseFlagMap();
+	    if (allPos) {
+	      bfmapEC=ecmap.aggregateOverBarcodes(bcout);
+	    } else {
+	      bfmapEC=new BaseFlagMap();
+	    }
 	} else {
-	    vaf=bfmap.calcVAF(refbase, alt);
+            vaf=bfmap.calcVAF(refbase, alt);
 	    ecmap.calcAmpBias(debug, alt);
 	    pval=ecmap.getPval();
 	    namplicons=ecmap.getNAmplicon();
