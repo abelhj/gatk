@@ -24,17 +24,26 @@ import java.io.FileWriter;
 import java.io.File;
 import java.io.PrintStream;
 
-public class ReadFamily {
+public class ReadFamilyAmp {
 
     private String barcode=null;
-    private List<GATKSAMRecord> readfam=null;
+    private String bamAmp=null;
+    private Map<String , List<GATKSAMRecord> > readfam=null;
+    private Map<String, Map<Integer, List<Amplicon> > ampliconMap=null;
 
-    public ReadFamily() {
+    public ReadFamilyAmp() {
     }
 
-    public ReadFamily(List<GATKSAMRecord> reads) {
+    public ReadFamilyAmp(Map<String, List<GATKSAMRecord> > reads, Map<String, Map<Integer, List<Amplicon> > ampMap) {
+	
 	readfam=reads;
-        barcode=readfam.get(0).getStringAttribute("X0");
+	ampliconMap=ampMap;
+	for(String str : reads.keySet()) {
+	    GATKSAMRecord firstRead=reads.get(str).get(0);
+	    barcode=firstRead.getStringAttribute("X0");
+	    bamAmp=firstRead.getStringAttribute("X1");
+	    continue;
+	}
     }
 
     public int getSize() {
@@ -42,9 +51,11 @@ public class ReadFamily {
     }
 
     public String toString() {
-	String str=barcode+"\t[\n";
-	for (GATKSAMRecord read : readfam) {
-	    str+=read.getSAMString()+",\n";
+	String str=barcode+"\t"+bamAmp"\t[\n";
+	for (String name : reads.keySet()) {
+	    for (GATKSAMRecord rec : readfam.get(name)) {
+		str+=rec.getSAMString()+",\n";
+	    }
 	}
 	str+="]";
 	return str;
