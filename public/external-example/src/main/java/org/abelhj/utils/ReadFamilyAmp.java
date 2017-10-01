@@ -13,6 +13,7 @@ import org.broadinstitute.gatk.utils.GenomeLoc;
 import org.broadinstitute.gatk.utils.GenomeLocParser;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
@@ -38,19 +39,19 @@ public class ReadFamilyAmp {
 
     public ReadFamilyAmp(GATKSAMRecord rec) {
 	this();
-	barcode=read.getStringAttribute("X0");
-	baramp=read.getStringAttribute("X1");
-	firstPos=read.getAlignmentStart();
-	firstChr=read.getReferenceName();
-	readfam.put(rec.getReadName(), new ArrayList<GATKSAMRecord>(rec));
+	barcode=rec.getStringAttribute("X0");
+	baramp=rec.getStringAttribute("X1");
+	firstPos=rec.getAlignmentStart();
+	firstChr=rec.getReferenceName();
+	readfam.put(rec.getReadName(), new ArrayList<GATKSAMRecord>());
+	readfam.get(rec.getReadName()).add(rec);
     }
 
     public void add(GATKSAMRecord rec) {
-	if(!readfam.containsKey(rec.getName())) {
-		readfam.put(rec.getName(), new ArrayList<GATKSAMRecord>(rec));
-	} else {
-	    readfam.get(rec.getName()).add(rec);
-	}
+	if(!readfam.containsKey(rec.getReadName())) {
+		readfam.put(rec.getReadName(), new ArrayList<GATKSAMRecord>());
+	} 
+	readfam.get(rec.getReadName()).add(rec);
     }
 	
 
@@ -59,7 +60,7 @@ public class ReadFamilyAmp {
     }
 
     public String toString() {
-	String str=barcode+"\t"+bamAmp+"\t[\n";
+	String str=barcode+"\t"+baramp+"\t[\n";
 	for (String name : readfam.keySet()) {
 	    for (GATKSAMRecord rec : readfam.get(name)) {
 		str+=rec.getSAMString()+",\n";
@@ -69,11 +70,11 @@ public class ReadFamilyAmp {
 	return str;
     }
 
-    public String findLeadRead( Map<String, Map<Integer, Map<String, ReadFamilyLead> > >bcmaster) {
+    public String findLeadRead( Map<String, Map<Integer, Map<String, String> > >bcmaster) {
 	String lead=null;
 	if (bcmaster.containsKey(firstChr)) {
 	    for(Integer ii : bcmaster.get(firstChr).keySet()) {
-		if(abs(ii-firstPos)<500 && bcmaster.get(firstChr).get(ii).containsKey(barcode)) {
+		if(Math.abs(ii-firstPos)<500 && bcmaster.get(firstChr).get(ii).containsKey(barcode)) {
 		    lead=bcmaster.get(firstChr).get(ii).get(barcode);
 		    return lead;
 		}
@@ -85,15 +86,15 @@ public class ReadFamilyAmp {
 	boolean seentwo=false;
 	for( String rdname : readfam.keySet()) {
 	    if(readfam.get(rdname).size()==1) {
-		int nm1=readfam.get(rdname).get(0).getStringAttribute("NM");
+		int nm1=Integer.parseInt(readfam.get(rdname).get(0).getStringAttribute("NM"));
 		if(nm1<score1) {
 		    score1=nm1;
 		    best=rdname;
 		}
 	    } else if (readfam.get(rdname).size()==2) {
 		seentwo=true;
-		int nm1=readfam.get(rdname).get(0).getStringAttribute("NM");
-		int nm2=readfam.get(rdname).get(1).getStringAttribute("NM");
+		int nm1=Integer.parseInt(readfam.get(rdname).get(0).getStringAttribute("NM"));
+		int nm2=Integer.parseInt(readfam.get(rdname).get(1).getStringAttribute("NM"));
 		if(nm1+nm2<score1+score2) {
 		    score1=nm1;
 		    score2=nm2;
@@ -105,12 +106,10 @@ public class ReadFamilyAmp {
 	if(!bcmaster.containsKey(firstChr)) {
 	    bcmaster.put(firstChr, new LinkedHashMap<Integer, Map<String, String> >());
 	}
-	if(!bcmaster.get(firstChr).containsKey(firstPos)) {
-	    bcmaster.get(firstChr).put(firstPos, new LinkedHashMap<String, String>());
-	}
+
 	Map<String, String> tempMap=new LinkedHashMap<String, String>();
 	tempMap.put(barcode, best);
-	bcmaster.get(firstChr).get(firstPos).put(tempMap);
+	bcmaster.get(firstChr).put(firstPos, tempMap);
 	return best;
     }
 
@@ -122,7 +121,7 @@ public class ReadFamilyAmp {
 	};*/       
 
 
-    public void getConsensus(PrintStream bcout, Map<String, Map<String, String> > bcmaster, SAMFileWriter sw) {
+    public void getConsensus(PrintStream bcout, Map<String, Map<Integer,  Map<String, String> > >  bcmaster, SAMFileWriter sw) {
 	
 	StringBuilder bctag=new StringBuilder(""+readfam.size());
 	boolean firstel=true;
@@ -140,7 +139,7 @@ public class ReadFamilyAmp {
 	    recs.get(0).add(readfam.get(lead).get(0));
 	    for(String nm : readfam.keySet()) {
 		if(!nm.equals(lead)) {
-		    recs.get(0).add(nm);
+		    recs.get(0).add(readfam.get(nm).get(0));
 		}
 	    }
 	} else if (nends==2) {
@@ -172,7 +171,7 @@ public class ReadFamilyAmp {
 
 	for(int i=0; i<nends; i++) {
 	    for(int j=0; j<recs.get(i).size(); j++) {
-		rr=recs.get(i).get(j);
+		GATKSAMRecord rr=recs.get(i).get(j);
 		System.out.println(baramp+"\t"+barcode+"\t"+rr.getSAMString());
 	    }
 	}

@@ -27,12 +27,12 @@ import java.io.PrintStream;
 public class ReadFamily {
 
     private String barcode=null;
-    private List<GATKSAMRecord> readfam=null;
+    private LinkedList<GATKSAMRecord> readfam=null;
 
     public ReadFamily() {
     }
 
-    public ReadFamily(List<GATKSAMRecord> reads) {
+    public ReadFamily(LinkedList<GATKSAMRecord> reads) {
 	readfam=reads;
         barcode=readfam.get(0).getStringAttribute("X0");
     }

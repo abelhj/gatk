@@ -78,7 +78,7 @@ public class WalkerTRConsensus_wk1 extends ReadWalker<Integer,Integer>  {
 
     String oldchr=null;
     String curchr=null;
-    int oldpos=-1;
+    //int oldpos=-1;
     int curpos=-1;
     String oldAmplicon=null;
     String curAmplicon=null;
@@ -129,20 +129,29 @@ public class WalkerTRConsensus_wk1 extends ReadWalker<Integer,Integer>  {
 	    if (ref.getBase() == 'N' || ref.getBase() == 'n') return null; 
 	    curchr=read.getReferenceName();
 	    curpos=read.getAlignmentStart();
-	    if(  !(curchr.equals(oldchr)) || ampliconMap.get(curchr).containsKey(curpos-10)) {         //find last possible current amplicon
-		for(Integer endpos : ampliconMap.get(oldchr).keySet()) {
-		    if (curpos>endpos+10 || !(curchr.equals(oldchr))) {
-			for(Amplicon amp : ampliconMap.get(oldchr).get(endpos)) {
+
+	    if(!curchr.equals(oldchr)) {
+		for(Integer endpos: ampliconMap.get(oldchr).keySet()) {
+		    for (Amplicon amp : ampliconMap.get(oldchr).get(endpos)) {
+			Map<String, ReadFamilyAmp> perAmpBC=bcreads.get(amp.getName());
+			perAmpBC.collapse(samwriter, ampliconMap, bcmaster);
+			bcreads.remove(amp.getName());
+		    }
+		    ampliconMap.remove(endpos);
+		    oldchr=curchr;
+	    } else {
+		for (Integer endpos : ampliconMap.get(curchr)) {
+		    if(endpos < curpos-10) {
+			for(Amplicon amp :ampliconMap.get(oldchr).get(endpos)) {
 			    Map<String, ReadFamilyAmp> perAmpBC=bcreads.get(amp.getName());
 			    perAmpBC.collapse(samwriter, ampliconMap, bcmaster);
 			    bcreads.remove(amp.getName());
-			}
-		    }	
+			}   
+			ampliconMap.remove(endpos);
+		    }
 		}
-		oldpos=curpos;
-		oldchr=curchr;
-		//oldAmplicon=curAmplicon;
 	    }
+
 	    String bc=read.getStringAttribute("X0");
 	    String amp=read.getStringAttribute("X1");
 	    if(!bcreads.containsKey(amp)) {
@@ -155,6 +164,7 @@ public class WalkerTRConsensus_wk1 extends ReadWalker<Integer,Integer>  {
 		bcreads.get(amp).get(bc).add(read);
 	    }
 	}
+
 	return 1;
     }
    
@@ -170,17 +180,10 @@ public class WalkerTRConsensus_wk1 extends ReadWalker<Integer,Integer>  {
 	for(String bc : bcreads.keySet()) {
 	    for (String ii : bcreads.get(bc).keySet()) {
 		ReadFamilyAmp rf=bcreads.get(bc).get(ii);
-		//System.out.println(rf);
 		rf.getConsensus(bcout, bcmaster, samwriter);
 	    }
 	}
 	samwriter.close();
     }
 
-    /*public Amplicon getNearestAmplicon(Map <String, List<GATKSAMRecord> > onebcmap, <String, Map<Integer, List< Amplicon> >  >ampliconMap) {
-
-
-
-
-      }*/
 }
