@@ -49,7 +49,7 @@ import java.io.FileReader;
 
 
 @Reference(window=@Window(start=-1, stop=1))
-public class WalkerTRConsensus_wk2 extends ReadWalker<Integer,Integer>  {
+public class WalkerTRConsensus_wk3 extends ReadWalker<Integer,Integer>  {
 
     @Output
     PrintStream out;
@@ -72,7 +72,9 @@ public class WalkerTRConsensus_wk2 extends ReadWalker<Integer,Integer>  {
     SAMFileWriterFactory sf=null;
 
     Map<String, Map<Integer, Map<String, ReadFamilyAmp> > >bcreads=null;
-    Map <String, Map<Integer, List< Amplicon> >  > ampliconMap;
+    Map <String, Map<Integer, List< Amplicon> >  > ampliconMap=null;
+    Map <String, Integer> bcmaster=null;
+    //Map<String, Map<Integer, Map<String, Map<String, GATKSAMRecord >bcmaster=null; 
 
 
     String oldchr=null;
@@ -116,17 +118,12 @@ public class WalkerTRConsensus_wk2 extends ReadWalker<Integer,Integer>  {
 		System.err.println("Could not create debug output file.\n");
 	    }
 	}
-	/*for (String chr : ampliconMap.keySet()) {
-	    for (Integer endpos : ampliconMap.get(chr).keySet()) {
-		for(Amplicon amp : ampliconMap.get(chr).get(endpos)) {
-		    System.err.println(amp);
-		}
-	    }
-	    }*/
 
 	bcreads=new LinkedHashMap<String,  Map<Integer, Map<String, ReadFamilyAmp > > >();
+	bcmaster=new LinkedHashMap<String, Integer>();
+	//bcmaster=new LinkedHashMap<String, Map<Integer, Map<String, Map<String, GATKSAMRecord > > > > ();
 	sf=new SAMFileWriterFactory();
-	samwriter=sf.makeBAMWriter(this.getToolkit().getSAMFileHeader(), true, new File(consensusBam), 5);
+	samwriter=sf.makeBAMWriter(this.getToolkit().getSAMFileHeader(), false, new File(consensusBam), 5);
     }
 
     public Integer map(ReferenceContext ref, GATKSAMRecord read, RefMetaDataTracker tracker) {
@@ -139,82 +136,29 @@ public class WalkerTRConsensus_wk2 extends ReadWalker<Integer,Integer>  {
 		oldchr=curchr;
 		oldpos=curpos;
 	    }
-	    System.err.println(oldchr+"\t"+curchr+"\t"+curpos);
 	    if(!curchr.equals(oldchr)) {
 		if(ampliconMap.containsKey(oldchr)) {
-		    System.err.println(oldchr+"\t"+curchr);
 		    Map<Integer, List<String> > toremove=new LinkedHashMap<Integer, List<String> >();
 		    for(Integer approxPos: bcreads.get(oldchr).keySet()) {
-			for(String bc: bcreads.get(oldchr).get(approxPos).keySet()) {
-			    System.out.println(curchr+"\t"+curpos+"\t"+approxPos+"\t"+bc);
-			    ReadFamilyAmp rf=bcreads.get(oldchr).get(approxPos).get(bc);
-			    System.out.println(rf);
-			    if(rf.collapse(samwriter, ampliconMap)) {
-				if(!toremove.containsKey(approxPos)) {
-                                    toremove.put(approxPos, new ArrayList<String>());
-                                }
-                                toremove.get(approxPos).add(bc);
-			    }
-			}
+			collapsePos(bcreads.get(oldchr), approxPos, samwriter, ampliconMap, toremove, true, bcmaster);         
 		    }
-		    for(Integer approxPos : toremove.keySet()) {
-			for(String bc : toremove.get(approxPos))  {
-			    bcreads.get(oldchr).get(approxPos).remove(bc);
-			    if(bcreads.get(oldchr).get(approxPos).size()==0) {
-				bcreads.get(oldchr).remove(approxPos);
-			    }
-			}
-		    }
+		    remove(bcreads.get(oldchr), toremove);
 		    toremove=null;
 		}
 		oldchr=curchr;
+		oldpos=curpos;
 	    } else if (bcreads.containsKey(curchr) && curpos!=oldpos) {
 		Map<Integer, List<String> > toremove=new LinkedHashMap<Integer, List<String> >();
 		for(Integer approxPos : bcreads.get(curchr).keySet()) {
 		    if(curpos>approxPos*1000+2500) {
-			for(String bc: bcreads.get(curchr).get(approxPos).keySet()){
-			    System.out.println(curchr+"\t"+curpos+"\t"+approxPos+"\t"+bc);
-			    ReadFamilyAmp rf=bcreads.get(curchr).get(approxPos).get(bc);
-			    System.out.println(rf);
-			    if(rf.collapse(samwriter, ampliconMap)){
-				if(!toremove.containsKey(approxPos)) {
-				    toremove.put(approxPos, new ArrayList<String>());
-				}
-				toremove.get(approxPos).add(bc);
-			    }
-			}   
-			
+			collapsePos(bcreads.get(curchr), approxPos, samwriter, ampliconMap, toremove, false, bcmaster);
 		    }
 		}
-		for(Integer approxPos : toremove.keySet()) {
-		    for(String bc : toremove.get(approxPos))  {
-			bcreads.get(curchr).get(approxPos).remove(bc);
-			if(bcreads.get(curchr).get(approxPos).size()==0) {
-			    bcreads.get(curchr).remove(approxPos);
-			}
-		    }
-		}
+		remove(bcreads.get(curchr), toremove);
 		toremove=null;
+		oldpos=curpos;
 	    }
-	    String bc=read.getStringAttribute("X0");
-	    int approxPos=curpos/1000;
-	    if(!bcreads.containsKey(curchr)) {
-		bcreads.put(curchr, new LinkedHashMap<Integer, Map<String, ReadFamilyAmp> >());
-	    }
-      	    if(!bcreads.get(curchr).containsKey(approxPos) && bcreads.get(curchr).containsKey(approxPos-1)) {
-		approxPos=approxPos-1;
-	    } else if (!bcreads.get(curchr).containsKey(approxPos) && bcreads.get(curchr).containsKey(approxPos+1)) {
-		approxPos=approxPos+1;
-	    }
-	    if(!bcreads.get(curchr).containsKey(approxPos)) {
-		bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, ReadFamilyAmp >());
-	    }	
-	    if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {
-		ReadFamilyAmp rf = new ReadFamilyAmp(read);
-		bcreads.get(curchr).get(approxPos).put(bc, rf);
-	    } else {
-		bcreads.get(curchr).get(approxPos).get(bc).add(read);
-	    }
+	    addRead(read, bcreads, curchr, curpos);
 	}
 	return 1;
     }
@@ -228,13 +172,66 @@ public class WalkerTRConsensus_wk2 extends ReadWalker<Integer,Integer>  {
     }
 
     public void onTraversalDone(Integer result) {
-	/*for(String bc : bcreads.keySet()) {
-	    for (String ii : bcreads.get(bc).keySet()) {
-		ReadFamilyAmp rf=bcreads.get(bc).get(ii);
-		//rf.getConsensus(bcout, bcmaster, samwriter);
-	    }
-	    }*/
+	Map<Integer, List<String> > toremove=new LinkedHashMap<Integer, List<String> >();
+	for(Integer approxPos : bcreads.get(curchr).keySet()) {
+	    collapsePos(bcreads.get(curchr), approxPos, samwriter, ampliconMap, toremove, true, bcmaster);
+	}
 	samwriter.close();
     }
 
+    public static void remove(Map<Integer, Map<String, ReadFamilyAmp > > bcr, Map<Integer, List<String> > toremove) {
+  
+      for(Integer approxPos : toremove.keySet()) {
+	 for(String bc : toremove.get(approxPos))  {
+	    bcr.get(approxPos).remove(bc);
+	    if(bcr.get(approxPos).size()==0) {
+		bcr.remove(approxPos);
+	    }
+	 }
+       }
+    }
+
+    public static void collapsePos(Map<Integer, Map<String, ReadFamilyAmp > > bcr, int pos, SAMFileWriter sw, 
+				   Map <String, Map<Integer, List< Amplicon> >  > ampMap,  Map<Integer, List<String> > toremove, boolean verbose,
+				   Map<String, Integer >bcmaster ) {
+
+	for(String bc: bcr.get(pos).keySet()) {
+	    System.out.println(bc);
+	    ReadFamilyAmp rf=bcr.get(pos).get(bc);
+	    System.out.println(rf);
+	    if(rf.collapse(sw, ampMap, bcmaster)) {
+		if(!toremove.containsKey(pos)) {
+		    toremove.put(pos, new ArrayList<String>());
+		}
+		toremove.get(pos).add(bc);
+	    }
+	    else if (verbose) {
+		System.err.println("No collapse\t"+bc);
+	 	//System.err.println(rf);
+	    }
+	}
+    }
+
+
+     public static void addRead(GATKSAMRecord read, Map<String, Map<Integer, Map<String, ReadFamilyAmp> > > bcreads, String curchr, int curpos) {
+
+        String bc=read.getStringAttribute("X0");
+        int approxPos=curpos/1000;
+        if(!bcreads.containsKey(curchr)) {
+	    bcreads.put(curchr, new LinkedHashMap<Integer, Map<String, ReadFamilyAmp> >());
+        }
+        if(bcreads.get(curchr).containsKey(approxPos-1) && bcreads.get(curchr).get(approxPos-1).containsKey(bc)) {
+	    approxPos=approxPos-1;
+        } 
+        if(!bcreads.get(curchr).containsKey(approxPos)) {
+	    bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, ReadFamilyAmp >());
+        }	
+        if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {
+	    ReadFamilyAmp rf = new ReadFamilyAmp(read);
+	    bcreads.get(curchr).get(approxPos).put(bc, rf);
+        } else {
+	    bcreads.get(curchr).get(approxPos).get(bc).add(read);
+        }
+    }
+     
 }
