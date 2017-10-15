@@ -29,10 +29,12 @@ public class ReadFamilyAmp {
 
     private String barcode=null;
     private String bestAmp=null;
-    private Map<String , GATKSAMRecord[] > readfam=null;
-    private int firstPos;
+    private Map<String , GATKSAMRecord[] > readfam=null;   //holds first and second read, indexed by name
+    private int firstPos;                                  //start and chr of first occurence of this family
     private String firstChr;
-    private String leadRead=null;
+    private String leadRead=null;                          //lead read name
+    private boolean single;                                //family only contains one end (other end might be elsewhere, if improperly paired)
+    private int single_order;                              //if single, order of lead read in pair
 
     public ReadFamilyAmp() {
 	readfam=new LinkedHashMap<String, GATKSAMRecord[] >();
@@ -44,13 +46,9 @@ public class ReadFamilyAmp {
 	barcode=rec.getStringAttribute("X0");
 	firstPos=rec.getAlignmentStart();
 	firstChr=rec.getReferenceName();
-	readfam.put(rec.getReadName(), new GATKSAMRecord[2]);
-	if(rec.getFirstOfPairFlag()) {
-	    readfam.get(rec.getReadName())[0]=rec;
-	}
-	else {
-	    readfam.get(rec.getReadName())[1]=rec;
-	}
+	add(rec);
+	single=false;
+	single_order=-1;
     }
 
     public String getLeadRead() {
@@ -78,7 +76,7 @@ public class ReadFamilyAmp {
     }
 
     public String toString() {
-	String str=barcode+"\t[\n";
+	String str=barcode+"\t"+bestAmp+"\t[\n";
 	for (String name : readfam.keySet()) {
 	    for (int i=0; i<2; i++) {
 		if(readfam.get(name)[i]!=null) {
@@ -90,70 +88,221 @@ public class ReadFamilyAmp {
 	return str;
     }
 
-    public void findLeadRead( ) {
+    //if both ends of any read not present, sets lead to null
+    public boolean findLeadRead( ) {
 
-	int score=100;
-	String best=null;
+	Map<Integer, Map<Integer, List<String> > > starts =new LinkedHashMap<Integer, Map<Integer, List<String> > >();
+	boolean twoends=false;
 
-	for( String rdname : readfam.keySet()) {
+	for (String rdname : readfam.keySet()) {
 	    if(readfam.get(rdname)[0]!=null && readfam.get(rdname)[1]!=null) {
-		int nm1=readfam.get(rdname)[0].getIntegerAttribute("NM");
-		int nm2=readfam.get(rdname)[1].getIntegerAttribute("NM");
-		if(nm1+nm2<score) {
-		    score=nm1+nm2;
-		    best=rdname;
+		twoends=true;
+		int start0=readfam.get(rdname)[0].getAlignmentStart();
+		int start1=readfam.get(rdname)[1].getAlignmentStart();
+		if(!starts.containsKey(start0)) {
+		    starts.put(start0, new LinkedHashMap<Integer, List<String> >());
+		}
+		if(!starts.get(start0).containsKey(start1)) {
+		    starts.get(start0).put(start1, new ArrayList<String>());
+		}
+		starts.get(start0).get(start1).add(rdname);
+	    }
+	}
+
+	if(!twoends) {
+	    return twoends;
+	}
+	
+	int maxct=-1;
+	int freqstart0=-1;
+	int freqstart1=-1;
+
+	for(Integer start0: starts.keySet()) {
+	    for(Integer start1 : starts.get(start0).keySet()) {
+		int count=starts.get(start0).get(start1).size();
+		if(count>maxct) {
+		    maxct=count;
+		    freqstart0=start0;
+		    freqstart1=start1;
 		}
 	    }
 	}
-	leadRead=best;
+
+	Map<Integer, Map<Integer, List<String> > > lens=new LinkedHashMap<Integer, Map<Integer, List<String> > >();
+
+	for(String rdname : starts.get(freqstart0).get(freqstart1)) {
+	    int len0=readfam.get(rdname)[0].getReadLength();
+	    int len1=readfam.get(rdname)[1].getReadLength();
+	    
+	    if(!lens.containsKey(len1)) {
+		lens.put(len0, new LinkedHashMap<Integer, List<String> >());
+	    }
+	    if(!lens.get(len0).containsKey(len1)) {
+		lens.get(len0).put(len1, new  ArrayList<String>());
+	    }
+	    lens.get(len0).get(len1).add(rdname);
+	}
+
+	maxct=-1;
+	int freqlen0=-1;
+	int freqlen1=-1;
+
+	for(Integer len0: lens.keySet()) {
+	    for(Integer len1 : lens.get(len0).keySet()) {
+		int count=lens.get(len0).get(len1).size();
+		if(count>maxct) {
+		    maxct=count;
+		    freqlen0=len0;
+		    freqlen1=len1;
+		}
+	    }
+	}
+
+	int minscore=999;
+	String bestRead="";
+
+	for(String rdname : lens.get(freqlen0).get(freqlen1)) {
+	    int curscore=readfam.get(rdname)[0].getIntegerAttribute("NM")+readfam.get(rdname)[1].getIntegerAttribute("NM");
+	    if(curscore<minscore) {
+		minscore=curscore;
+		bestRead=rdname;
+	    }
+	}	
+	if(minscore==999) {
+	    return false;
+	}
+	leadRead=bestRead;
+	return true;
     }
 
+    public void findLeadReadSingle( Map<String, Integer> bcmaster) {
 
-    public void findLeadReadSingle( ) {
-
-	int score=100;
-	String best=null;
-
-	for( String rdname : readfam.keySet()) {
-	    for(int i=0; i<2; i++) {
-		if(readfam.get(rdname)[i]!=null ) {
-		    int nm=readfam.get(rdname)[i].getIntegerAttribute("NM");
-		    if(nm<score) {
-			score=nm;
-			best=rdname;
+	boolean hasLead=false;
+	for(String readname : readfam.keySet()) {
+	    if(bcmaster.containsKey(readname)) {
+		hasLead=true;
+		leadRead=readname;
+		bcmaster.remove(leadRead);
+		for(int ii=0; ii<2; ii++) {
+		    if(readfam.get(leadRead)[ii]!=null) {
+			single_order=ii;
+			break;
 		    }
 		}
+		return;
 	    }
 	}
-	leadRead=best;
+
+	int[] endcounts=new int[2];
+
+	for(int ii=0; ii<2; ii++) {
+	    for(String rdname : readfam.keySet()) {
+		if(readfam.get(rdname)[ii]!=null) {
+		    endcounts[ii]++;
+		}
+	    }
+	}
+
+	int pairEnd=0;
+	if(endcounts[1]>endcounts[0]) {
+	    pairEnd=1;
+	}
+
+	single_order=pairEnd;
+
+        Map<Integer, List<String> >  starts=new LinkedHashMap<Integer, List<String> >  ();
+
+	//System.err.println("single_order="+single_order);
+	for (String rdname : readfam.keySet()) {
+	    if(readfam.get(rdname)[single_order]!=null) {
+		int start=readfam.get(rdname)[single_order].getAlignmentStart();
+		//System.err.println(start+"\t"+rdname);
+		if(!starts.containsKey(start)) {
+		    starts.put(start, new ArrayList<String>());
+		}
+		starts.get(start).add(rdname);
+	    }
+	}
+
+	int maxct=-1;
+        int freqstart=-1;
+
+        for(Integer start0: starts.keySet()) {
+	    int count=starts.get(start0).size();
+	    if(count>maxct) {
+		maxct=count;
+                freqstart=start0;
+	    }
+        }
+
+	Map<Integer, List<String> > lens=new LinkedHashMap<Integer, List<String> > ();
+	//System.err.println(toString());
+	//System.err.println("freqstart="+freqstart);
+	for(String rdname : starts.get(freqstart)) {
+	    int len=readfam.get(rdname)[single_order].getReadLength();
+
+	    if(!lens.containsKey(len)) {
+		lens.put(len, new ArrayList<String>());
+	    }
+	    lens.get(len).add(rdname);
+	}
+
+	maxct=-1;
+	int freqlen=-1;
+
+	for(Integer len0: lens.keySet()) {
+	    int count=lens.get(len0).size();
+	    if(count>maxct) {
+		maxct=count;
+		freqlen=len0;
+	    }
+	}
+
+	int minscore=999;
+	String bestRead="";
+
+	for(String rdname : lens.get(freqlen)) {
+	    int curscore=readfam.get(rdname)[single_order].getIntegerAttribute("NM");
+	    if(curscore<minscore) {
+		minscore=curscore;
+		bestRead=rdname;
+	    }
+	}		
+	leadRead=bestRead;
+	bcmaster.put(leadRead, 0);
     }
 
 
-    public boolean findBestAmplicon(Map <String, Map<Integer, List< Amplicon> >  > ampliconMap) {
+    public void findBestAmplicon(Map <String, Map<Integer, List< Amplicon> > > ampliconMap) {
 	
 	if(leadRead==null) {
-	    findLeadRead();
-	    if(leadRead==null) {
-		return false;
+	    System.err.println("Error: Must find lead read before best amplicon.\n");
+	    System.exit(1);
+	}
+
+	int begin=-1;    //min and max aligned position for family 
+	int end=-1;
+	if(single) {
+	    begin=readfam.get(leadRead)[single_order].getAlignmentStart();
+	    end=readfam.get(leadRead)[single_order].getAlignmentEnd();
+	} else {
+	    //System.err.println(toString());
+	    begin=readfam.get(leadRead)[0].getAlignmentStart();
+	    end=readfam.get(leadRead)[1].getAlignmentEnd();
+	    int begin1=readfam.get(leadRead)[1].getAlignmentStart();
+	    int end1=readfam.get(leadRead)[0].getAlignmentEnd();
+	    if(begin1<begin) {
+		begin=begin1;
+	    }
+	    if(end1>end) {
+		end=end1;
 	    }
 	}
-
-	int begin=readfam.get(leadRead)[0].getAlignmentStart();
-	int end=readfam.get(leadRead)[0].getAlignmentEnd();
-	int begin1=readfam.get(leadRead)[1].getAlignmentStart();
-	int end1=readfam.get(leadRead)[1].getAlignmentEnd();
-
-	if(begin1<begin) {
-	    begin=begin1;
-	}
-	if(end1>end) {
-	    end=end1;
-	}
-
+	    
 	String  curBest=null;
 	int ampscore=1000;
 	if(!ampliconMap.containsKey(firstChr)) {
-	    return true;
+	    return;   //amplicon is 'None'
 	} else {
 	    for(Integer endpos: ampliconMap.get(firstChr).keySet()) {
 		if(Math.abs(endpos-end)<1000) {
@@ -168,14 +317,14 @@ public class ReadFamilyAmp {
 	    }
 	}
 	bestAmp=curBest;
-	return true;
     }
 
     public boolean collapse(SAMFileWriter sw, Map <String, Map<Integer, List< Amplicon> >  > ampliconMap, 
 			    Map<String, Integer> bcmaster ) {
 
-	findLeadRead();
-	if(findBestAmplicon(ampliconMap)) {
+	boolean paired=findLeadRead();
+	if(paired) {
+	    findBestAmplicon(ampliconMap);
 	    System.out.println("collapsing\tlead="+leadRead+", bestAmplicon="+bestAmp);
 	   
 	    List< List<GATKSAMRecord> > recs=new ArrayList< List<GATKSAMRecord> >();
@@ -198,31 +347,18 @@ public class ReadFamilyAmp {
 	    getConsensus(sw, recs.get(1));
 	    return true;
 	} else {
+	    single=true;
 	    System.out.println("collapsing single end");
-	    boolean hasLead=false;
-	    for(String readname : readfam.keySet()) {
-		if(bcmaster.containsKey(readname)) {
-		    hasLead=true;
-		    leadRead=readname;
-		    break;
-		}
-	    }
-	    if(hasLead) {
-		bcmaster.remove(leadRead);
-	    } else {
-		findLeadReadSingle();
-		bcmaster.put(leadRead, 0);
-	    }
-	    int ii=0;
-	    if(readfam.get(leadRead)[0]==null) {
-		ii=1;
-	    }
+	    findLeadReadSingle(bcmaster);
+	    findBestAmplicon(ampliconMap);
+            System.out.println("collapsing\tlead="+leadRead+", bestAmplicon="+bestAmp);
+
 	    List<GATKSAMRecord> recs=new ArrayList<GATKSAMRecord>();
-	    recs.add(readfam.get(leadRead)[ii]);
+	    recs.add(readfam.get(leadRead)[single_order]);
 	    for(String nm : readfam.keySet()) {
 		if(!nm.equals(leadRead)) {
-		    if(readfam.get(nm)[ii]!=null && readfam.get(nm)[ii].getReadLength()==readfam.get(leadRead)[ii].getReadLength()) {
-			recs.add(readfam.get(nm)[ii]);
+		    if(readfam.get(nm)[single_order]!=null && readfam.get(nm)[single_order].getReadLength()==readfam.get(leadRead)[single_order].getReadLength()) {
+			recs.add(readfam.get(nm)[single_order]);
 		    }
 		}
 	    }
@@ -292,6 +428,7 @@ public class ReadFamilyAmp {
 	lead.setReadBases(newbases);
 	lead.setAttribute("BC", bctag.toString());
 	lead.setAttribute("X1", bestAmp);
+	System.out.println(lead.getSAMString());
 	sw.addAlignment(lead);
     }
 }
