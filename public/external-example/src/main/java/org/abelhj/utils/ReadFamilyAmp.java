@@ -279,12 +279,17 @@ public class ReadFamilyAmp {
 	    System.err.println("Error: Must find lead read before best amplicon.\n");
 	    System.exit(1);
 	}
-
+	boolean plusStrand=true;
 	int begin=-1;    //min and max aligned position for family 
 	int end=-1;
 	if(single) {
 	    begin=readfam.get(leadRead)[single_order].getAlignmentStart();
 	    end=readfam.get(leadRead)[single_order].getAlignmentEnd();
+	    if (single_order==0 && readfam.get(leadRead)[single_order].getReadNegativeStrandFlag()) {
+		plusStrand=false;
+	    } else if (single_order==1 && !readfam.get(leadRead)[single_order].getReadNegativeStrandFlag()) {
+		plusStrand=false;
+	    }
 	} else {
 	    //System.err.println(toString());
 	    begin=readfam.get(leadRead)[0].getAlignmentStart();
@@ -296,6 +301,11 @@ public class ReadFamilyAmp {
 	    }
 	    if(end1>end) {
 		end=end1;
+	    }
+	    if(readfam.get(leadRead)[0].getReadNegativeStrandFlag()) {
+		plusStrand=false;
+	    } else if (!readfam.get(leadRead)[0].getReadNegativeStrandFlag()) {
+		plusStrand=false;
 	    }
 	}
 	    

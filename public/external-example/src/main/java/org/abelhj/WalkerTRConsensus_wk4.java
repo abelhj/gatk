@@ -144,7 +144,7 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
 	    } else if (curpos!=oldpos && bcreads.containsKey(curchr)) {
 		List<Integer> toremove=new ArrayList<Integer>();
 		for(Integer approxPos : bcreads.get(curchr).keySet()) {
-		    if(curpos>approxPos*1000+2500) {                           //these barcodes should be done
+		    if(curpos>approxPos*100+1000) {                           //these barcodes should be done
 			collapsePos(bcreads.get(curchr), approxPos, samwriter, ampliconMap, false, bcmaster);
 			toremove.add(approxPos);
 		    }
@@ -195,6 +195,7 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
 
 	for(String bc: bcr.get(pos).keySet()) {
 	    ReadFamilyAmp rf=bcr.get(pos).get(bc);
+	    System.out.println("curpos="+pos);
 	    System.out.println(rf);
 	    rf.collapse(sw, ampMap, bcmaster);
 	}
@@ -204,24 +205,28 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
      public static void addRead(GATKSAMRecord read, Map<String, Map<Integer, Map<String, ReadFamilyAmp> > > bcreads, String curchr, int curpos) {
 
         String bc=read.getStringAttribute("X0");
-        int approxPos=curpos/1000;
+        
+	int approxPos=curpos/100;
         if(!bcreads.containsKey(curchr)) {
 	    bcreads.put(curchr, new LinkedHashMap<Integer, Map<String, ReadFamilyAmp> >());
         }
 	//check to see if this read family already stored under previous approxpos. if so, add it
-        if(bcreads.get(curchr).containsKey(approxPos-1) && bcreads.get(curchr).get(approxPos-1).containsKey(bc)) {
-	    bcreads.get(curchr).get(approxPos-1).get(bc).add(read);
-        } else { //add to this approxpos
-	    if(!bcreads.get(curchr).containsKey(approxPos)) {
-		bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, ReadFamilyAmp >());
-	    }	
-	    if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {
-		ReadFamilyAmp rf = new ReadFamilyAmp(read);
-		bcreads.get(curchr).get(approxPos).put(bc, rf);
-	    } else {
-		bcreads.get(curchr).get(approxPos).get(bc).add(read);
+        
+	for(int ii=5; ii>=1; ii--) {
+	    if( bcreads.get(curchr).containsKey(approxPos-ii) && bcreads.get(curchr).get(approxPos-ii).containsKey(bc)) {
+		bcreads.get(curchr).get(approxPos-ii).get(bc).add(read);
+		break;
 	    }
 	}
+        if(!bcreads.get(curchr).containsKey(approxPos)) {                                                                                                                               
+	    bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, ReadFamilyAmp >());                                                                                            
+        }                                                                                                                                                                               
+        if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {                                                                                                                       
+	    ReadFamilyAmp rf = new ReadFamilyAmp(read);                                                                                                                                 
+            bcreads.get(curchr).get(approxPos).put(bc, rf);                                                                                                                             
+        } else {                                                                                                                                                                        
+	    bcreads.get(curchr).get(approxPos).get(bc).add(read);                                                                                                                       
+        }        
     }
      
 }
