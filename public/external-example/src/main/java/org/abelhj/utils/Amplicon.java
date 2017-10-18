@@ -8,16 +8,22 @@ public class Amplicon {
     protected int end;
     protected String name;
     protected String chr;
+    protected char strand;
 
-    public Amplicon(String chr, int start, int end, String nm) {
+    public Amplicon(String chr, int start, int end, String nm, char strand) {
         this.chr=chr;
 	this.start=start;
 	this.end=end;
         this.name=nm;
+	this.strand=strand;
+    }
+
+    public Amplicon(String chr, int start, int end, String nm) {
+	this(chr, start, end, nm, '+');
     }
 
     public String toString() {
-	String str=chr+":"+start+"-"+end+":"+name;
+	String str=chr+":"+start+"-"+end+":"+name+":"+strand;
         return str;
     }
 
@@ -37,6 +43,11 @@ public class Amplicon {
 	return name;
     }
 
+    public char getStrand() {
+	return strand;
+    }
+	
+
     public int getDist(GATKSAMRecord rec) {
 	int dist=0;
 	if(rec.getReferenceName().equals(chr)) {
@@ -49,34 +60,6 @@ public class Amplicon {
 	    return 9999;
 	}
     }
-
-    /*    public int getDist(GATKSAMRecord rec) {
-	int dist1=0;
-	int dist2=0;
-	if(rec.getReferenceName().equals(chr)) {
-	    if(rec.getFirstOfPairFlag()) {
-		if(!rec.getReadNegativeStrandFlag()) {
-		    dist1=Math.abs(rec.getAlignmentStart()-start);
-		    //dist2=Math.abs(rec.getAlignmentStart()+Math.abs(rec.getInferredInsertSize())-end);
-		} else {
-		    //dist1=Math.abs(rec.getMateAlignmentStart()-start);
-		  dist1=Math.abs(rec.getMateAlignmentStart()+Math.abs(rec.getInferredInsertSize())-end);
-		}
-	    } else {
-		if(!rec.getReadNegativeStrandFlag()) {
-		    dist1=Math.abs(rec.getAlignmentStart()-start);
-		    //dist2=Math.abs(rec.getAlignmentStart()+Math.abs(rec.getInferredInsertSize())-end);
-		} else {
-		    //dist1=Math.abs(rec.getMateAlignmentStart()-start);
-		  dist1=Math.abs(rec.getMateAlignmentStart()+Math.abs(rec.getInferredInsertSize())-end);
-		}
-	    }
-	    return dist1+dist2;
-	} else {
-	    return 9999;
-	}
-
-	}*/
 
 
 }

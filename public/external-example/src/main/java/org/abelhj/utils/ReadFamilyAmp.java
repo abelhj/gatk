@@ -12,6 +12,8 @@ import org.broadinstitute.gatk.utils.QualityUtils;
 import org.broadinstitute.gatk.utils.GenomeLoc;
 import org.broadinstitute.gatk.utils.GenomeLocParser;
 
+import java.util.Set;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ArrayList;
@@ -27,14 +29,15 @@ import java.io.PrintStream;
 
 public class ReadFamilyAmp {
 
-    private String barcode=null;
-    private String bestAmp=null;
-    private Map<String , GATKSAMRecord[] > readfam=null;   //holds first and second read, indexed by name
-    private int firstPos;                                  //start and chr of first occurence of this family
-    private String firstChr;
-    private String leadRead=null;                          //lead read name
-    private boolean single;                                //family only contains one end (other end might be elsewhere, if improperly paired)
-    private int single_order;                              //if single, order of lead read in pair
+    protected String barcode=null;
+    protected String bestAmp=null;
+    protected Map<String , GATKSAMRecord[] > readfam=null;   //holds first and second read, indexed by name
+    protected int firstPos;                                  //start and chr of first occurence of this family
+    protected String firstChr;
+    protected String leadRead=null;                          //lead read name
+    protected boolean single;                                //family only contains one end (other end might be elsewhere, if improperly paired)
+    protected int single_order;                              //if single, order of lead read in pair
+    protected char strand;
 
     public ReadFamilyAmp() {
 	readfam=new LinkedHashMap<String, GATKSAMRecord[] >();
@@ -49,7 +52,30 @@ public class ReadFamilyAmp {
 	add(rec);
 	single=false;
 	single_order=-1;
+	strand=getStrand(rec);
     }
+
+    public void  resetReadFam() {
+	bestAmp="None";
+	leadRead=null;
+	single=false;
+	single_order=-1;
+    }
+
+    public static char getStrand(GATKSAMRecord rec ) {
+	char strand='+';
+	if( rec.getFirstOfPairFlag()) {
+	    if(rec.getReadNegativeStrandFlag()) {
+		strand='-';
+	    }
+	} else {
+	    if(!rec.getReadNegativeStrandFlag()) {
+		strand='-';
+	    }
+	}
+	return strand;
+    }
+
 
     public String getLeadRead() {
 	return leadRead;
@@ -76,7 +102,7 @@ public class ReadFamilyAmp {
     }
 
     public String toString() {
-	String str=barcode+"\t"+bestAmp+"\t[\n";
+	String str=barcode+"\t"+bestAmp+"\t"+strand+"\t[\n";
 	for (String name : readfam.keySet()) {
 	    for (int i=0; i<2; i++) {
 		if(readfam.get(name)[i]!=null) {
@@ -89,9 +115,9 @@ public class ReadFamilyAmp {
     }
 
     //if both ends of any read not present, sets lead to null
-    public boolean findLeadRead( ) {
+    public String findLeadRead( ) {
 
-	Map<Integer, Map<Integer, List<String> > > starts =new LinkedHashMap<Integer, Map<Integer, List<String> > >();
+	Map<Integer, Map<Integer, List<String> > > starts = new LinkedHashMap<Integer, Map<Integer, List<String> > >();
 	boolean twoends=false;
 
 	for (String rdname : readfam.keySet()) {
@@ -110,7 +136,7 @@ public class ReadFamilyAmp {
 	}
 
 	if(!twoends) {
-	    return twoends;
+	    return null;
 	}
 	
 	int maxct=-1;
@@ -169,29 +195,24 @@ public class ReadFamilyAmp {
 	    }
 	}	
 	if(minscore==999) {
-	    return false;
+	    return null;
 	}
-	leadRead=bestRead;
-	return true;
+	return bestRead;
     }
 
-    public void findLeadReadSingle( Map<String, Integer> bcmaster) {
+    public String  findLeadReadMaster( Map<String, Integer> bcmaster) {
 
-	boolean hasLead=false;
 	for(String readname : readfam.keySet()) {
 	    if(bcmaster.containsKey(readname)) {
-		hasLead=true;
 		leadRead=readname;
-		bcmaster.remove(leadRead);
-		for(int ii=0; ii<2; ii++) {
-		    if(readfam.get(leadRead)[ii]!=null) {
-			single_order=ii;
-			break;
-		    }
-		}
-		return;
+		return readname;
 	    }
 	}
+	return null;
+    }
+
+
+    public String findLeadReadSingle() {
 
 	int[] endcounts=new int[2];
 
@@ -208,15 +229,11 @@ public class ReadFamilyAmp {
 	    pairEnd=1;
 	}
 
-	single_order=pairEnd;
-
         Map<Integer, List<String> >  starts=new LinkedHashMap<Integer, List<String> >  ();
 
-	//System.err.println("single_order="+single_order);
 	for (String rdname : readfam.keySet()) {
-	    if(readfam.get(rdname)[single_order]!=null) {
-		int start=readfam.get(rdname)[single_order].getAlignmentStart();
-		//System.err.println(start+"\t"+rdname);
+	    if(readfam.get(rdname)[pairEnd]!=null) {
+		int start=readfam.get(rdname)[pairEnd].getAlignmentStart();
 		if(!starts.containsKey(start)) {
 		    starts.put(start, new ArrayList<String>());
 		}
@@ -236,10 +253,9 @@ public class ReadFamilyAmp {
         }
 
 	Map<Integer, List<String> > lens=new LinkedHashMap<Integer, List<String> > ();
-	//System.err.println(toString());
-	//System.err.println("freqstart="+freqstart);
+
 	for(String rdname : starts.get(freqstart)) {
-	    int len=readfam.get(rdname)[single_order].getReadLength();
+	    int len=readfam.get(rdname)[pairEnd].getReadLength();
 
 	    if(!lens.containsKey(len)) {
 		lens.put(len, new ArrayList<String>());
@@ -262,79 +278,93 @@ public class ReadFamilyAmp {
 	String bestRead="";
 
 	for(String rdname : lens.get(freqlen)) {
-	    int curscore=readfam.get(rdname)[single_order].getIntegerAttribute("NM");
+	    int curscore=readfam.get(rdname)[pairEnd].getIntegerAttribute("NM");
 	    if(curscore<minscore) {
 		minscore=curscore;
 		bestRead=rdname;
 	    }
 	}		
-	leadRead=bestRead;
-	bcmaster.put(leadRead, 0);
+	return bestRead;
     }
 
 
-    public void findBestAmplicon(Map <String, Map<Integer, List< Amplicon> > > ampliconMap) {
+    public String findBestAmplicon(Map <String, Map<Integer, List< Amplicon> > > ampliconMap, String readnm) {
 	
-	if(leadRead==null) {
-	    System.err.println("Error: Must find lead read before best amplicon.\n");
-	    System.exit(1);
+	
+	boolean singleEnd=false;
+	int currentEnd=0;
+
+	if(readfam.get(readnm)[0]==null) {
+	    singleEnd=true;
+	    currentEnd=1;
+	} else if (readfam.get(readnm)[1]==null) {
+	    singleEnd=true;
 	}
-	boolean plusStrand=true;
+
 	int begin=-1;    //min and max aligned position for family 
 	int end=-1;
-	if(single) {
-	    begin=readfam.get(leadRead)[single_order].getAlignmentStart();
-	    end=readfam.get(leadRead)[single_order].getAlignmentEnd();
-	    if (single_order==0 && readfam.get(leadRead)[single_order].getReadNegativeStrandFlag()) {
-		plusStrand=false;
-	    } else if (single_order==1 && !readfam.get(leadRead)[single_order].getReadNegativeStrandFlag()) {
-		plusStrand=false;
-	    }
+	if(singleEnd) {
+	    begin=readfam.get(readnm)[currentEnd].getAlignmentStart();
+	    end=readfam.get(readnm)[currentEnd].getAlignmentEnd();
 	} else {
-	    //System.err.println(toString());
-	    begin=readfam.get(leadRead)[0].getAlignmentStart();
-	    end=readfam.get(leadRead)[1].getAlignmentEnd();
-	    int begin1=readfam.get(leadRead)[1].getAlignmentStart();
-	    int end1=readfam.get(leadRead)[0].getAlignmentEnd();
+
+	    begin=readfam.get(readnm)[0].getAlignmentStart();
+	    end=readfam.get(readnm)[1].getAlignmentEnd();
+	    int begin1=readfam.get(readnm)[1].getAlignmentStart();
+	    int end1=readfam.get(readnm)[0].getAlignmentEnd();
 	    if(begin1<begin) {
 		begin=begin1;
 	    }
 	    if(end1>end) {
 		end=end1;
 	    }
-	    if(readfam.get(leadRead)[0].getReadNegativeStrandFlag()) {
-		plusStrand=false;
-	    } else if (!readfam.get(leadRead)[0].getReadNegativeStrandFlag()) {
-		plusStrand=false;
-	    }
 	}
 	    
-	String  curBest=null;
+	String  curBest="None";
 	int ampscore=1000;
 	if(!ampliconMap.containsKey(firstChr)) {
-	    return;   //amplicon is 'None'
+	    return curBest;   //amplicon is 'None'
 	} else {
 	    for(Integer endpos: ampliconMap.get(firstChr).keySet()) {
 		if(Math.abs(endpos-end)<1000) {
 		    for (Amplicon amp : ampliconMap.get(firstChr).get(endpos)) {
-			int score=Math.abs(endpos-end)+Math.abs(amp.getStart()-begin);
-			if(score<ampscore) {
-			    ampscore=score;
-			    curBest=amp.getName();;
+			if(amp.getStrand()==strand ) {
+			    int score=Math.abs(endpos-end)+Math.abs(amp.getStart()-begin);
+			    if(score<ampscore) {
+				ampscore=score;
+				curBest=amp.getName();;
+			    }
 			}
 		    }
 		}
 	    }
 	}
-	bestAmp=curBest;
+	return curBest;
+    }
+
+    public int findSingleEnd(String readname) {
+	if(readfam.get(readname)[0]!=null) {
+	    return 0;
+	} else if (readfam.get(readname)[1]!=null) {
+	    return 1;
+	}
+	return -1;
+    }
+
+    public boolean collapse(SAMFileWriter sw, Map <String, Map<Integer, List< Amplicon> >  > ampliconMap,
+                            Map<String, Integer> bcmaster) {
+	return collapse(sw, ampliconMap, bcmaster, 1);
     }
 
     public boolean collapse(SAMFileWriter sw, Map <String, Map<Integer, List< Amplicon> >  > ampliconMap, 
-			    Map<String, Integer> bcmaster ) {
+			    Map<String, Integer> bcmaster, int attempt ) {
 
-	boolean paired=findLeadRead();
-	if(paired) {
-	    findBestAmplicon(ampliconMap);
+	String lead=findLeadRead();
+	
+	if(lead!=null) {
+
+	    leadRead=lead;
+	    bestAmp=findBestAmplicon(ampliconMap, leadRead);
 	    System.out.println("collapsing\tlead="+leadRead+", bestAmplicon="+bestAmp);
 	   
 	    List< List<GATKSAMRecord> > recs=new ArrayList< List<GATKSAMRecord> >();
@@ -343,45 +373,86 @@ public class ReadFamilyAmp {
 	    recs.add(new ArrayList<GATKSAMRecord>());
 	    recs.get(0).add(readfam.get(leadRead)[0]);
 	    recs.get(1).add(readfam.get(leadRead)[1]);
-	    for(String nm : readfam.keySet()) {
+	    Set<String> names=new LinkedHashSet(readfam.keySet());
+	   
+	    for (String nm :names) {
+		boolean toremove=false;
 		if(!nm.equals(leadRead)) {
-		    if(readfam.get(nm)[0]!=null && readfam.get(nm)[0].getReadLength()==readfam.get(leadRead)[0].getReadLength()) {
+		    if(readfam.get(nm)[0]!=null && readfam.get(nm)[0].getReadLength()==readfam.get(leadRead)[0].getReadLength() && 
+		       readfam.get(nm)[0].getAlignmentStart()==readfam.get(leadRead)[0].getAlignmentStart()) {
 			recs.get(0).add(readfam.get(nm)[0]);
+			toremove=true;
 		    }
-		    if(readfam.get(nm)[1]!=null && readfam.get(nm)[1].getReadLength()==readfam.get(leadRead)[1].getReadLength()) {
+		    if(readfam.get(nm)[1]!=null && readfam.get(nm)[1].getReadLength()==readfam.get(leadRead)[1].getReadLength() && 
+		       readfam.get(nm)[1].getAlignmentStart()==readfam.get(leadRead)[1].getAlignmentStart()) {
 			recs.get(1).add(readfam.get(nm)[1]);
+			toremove=true;
 		    }
 		}
+		if(toremove) {
+		    readfam.remove(nm);
+		}
 	    }
+	    readfam.remove(leadRead);
 	    getConsensus(sw, recs.get(0));
 	    getConsensus(sw, recs.get(1));
-	    return true;
+
 	} else {
 	    single=true;
 	    System.out.println("collapsing single end");
-	    findLeadReadSingle(bcmaster);
-	    findBestAmplicon(ampliconMap);
+	    lead=findLeadReadMaster(bcmaster);
+	    if(lead==null) {
+		lead=findLeadReadSingle();
+		bcmaster.put(lead, 1);
+	    } else{
+		bcmaster.remove(lead);
+	    }
+       
+	    leadRead=lead;
+	    single_order=findSingleEnd(lead);
+	    bestAmp=findBestAmplicon(ampliconMap, leadRead);
             System.out.println("collapsing\tlead="+leadRead+", bestAmplicon="+bestAmp);
 
 	    List<GATKSAMRecord> recs=new ArrayList<GATKSAMRecord>();
 	    recs.add(readfam.get(leadRead)[single_order]);
-	    for(String nm : readfam.keySet()) {
+	    Set<String> names=new LinkedHashSet(readfam.keySet());
+	    for(String nm : names) {
+		boolean toremove=false;
 		if(!nm.equals(leadRead)) {
-		    if(readfam.get(nm)[single_order]!=null && readfam.get(nm)[single_order].getReadLength()==readfam.get(leadRead)[single_order].getReadLength()) {
+		    if(readfam.get(nm)[single_order]!=null && readfam.get(nm)[single_order].getReadLength()==readfam.get(leadRead)[single_order].getReadLength() &&
+		       readfam.get(nm)[single_order].getAlignmentStart()==readfam.get(leadRead)[single_order].getAlignmentStart()) {
 			recs.add(readfam.get(nm)[single_order]);
+			toremove=true;
 		    }
 		}
+		if(toremove) {
+                    readfam.remove(nm);
+		}
 	    }
+	    readfam.remove(leadRead);
 	    getConsensus(sw, recs);
-			
-	    return false;
 	}
+	if(readfam.size()>0) {
+	   
+	    Set<String> readsLeft=new LinkedHashSet<String> (readfam.keySet());
+	    for(String readnm : readsLeft) {
+		if(bestAmp.equals(findBestAmplicon(ampliconMap, readnm))) {
+		    readfam.remove(readnm);
+		}	
+	    }
+	    if(readfam.size()>0 && attempt<4) {
+		resetReadFam();
+		collapse(sw, ampliconMap, bcmaster, attempt+1);
+		return false;
+	    }
+	} 
+	return true;
     }
 
 
     public void getConsensus( SAMFileWriter sw, List<GATKSAMRecord> reads) {
 	
-	StringBuilder bctag=new StringBuilder(""+readfam.size());
+	StringBuilder bctag=new StringBuilder(""+reads.size());
 	boolean firstel=true;
 
 	GATKSAMRecord lead=reads.get(0);

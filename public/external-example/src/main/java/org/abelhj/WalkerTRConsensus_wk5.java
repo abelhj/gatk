@@ -49,7 +49,7 @@ import java.io.FileReader;
 
 
 @Reference(window=@Window(start=-1, stop=1))
-public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
+public class WalkerTRConsensus_wk5 extends ReadWalker<Integer,Integer>  {
 
     @Output
     PrintStream out;
@@ -71,7 +71,8 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
     SAMFileWriter samwriter=null;
     SAMFileWriterFactory sf=null;
 
-    Map<String, Map<Integer, Map<String, ReadFamilyAmp> > >bcreads=null;
+    //Map<String, Map<Integer, Map<String, ReadFamilyAmp> > >bcreads=null;
+    Map <String, Map <Integer, Map<String, Map<Character, ReadFamilyAmp> > > > bcreads = null;
     Map <String, Map<Integer, List< Amplicon> >  > ampliconMap=null;
     Map <String, Integer> bcmaster=null;  //holds readnames of readlead for single end collapsed families 
 
@@ -127,7 +128,7 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
 	}
 	//	System.exit(1);
 
-	bcreads=new LinkedHashMap<String,  Map<Integer, Map<String, ReadFamilyAmp > > >();
+	bcreads=new LinkedHashMap<String,  Map<Integer, Map<String, Map<Character, ReadFamilyAmp > > > >();
 	bcmaster=new LinkedHashMap<String, Integer>();
 	sf=new SAMFileWriterFactory();
 	samwriter=sf.makeBAMWriter(this.getToolkit().getSAMFileHeader(), false, new File(consensusBam), 5);
@@ -187,7 +188,7 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
 	samwriter.close();
     }
 
-    public static void remove(Map<Integer, Map<String, ReadFamilyAmp > > bcr, Map<Integer, List<String> > toremove) {
+    public static void remove(Map<Integer, Map<String, Map<Character, ReadFamilyAmp>  > > bcr, Map<Integer, List<String> > toremove) {
   
       //holding on to families that aren't collapsed as pairs--just in case we decide to deal with those diffently
       for(Integer approxPos : toremove.keySet()) {
@@ -200,44 +201,66 @@ public class WalkerTRConsensus_wk4 extends ReadWalker<Integer,Integer>  {
        }
     }
 
-    public static void collapsePos(Map<Integer, Map<String, ReadFamilyAmp > > bcr, int pos, SAMFileWriter sw, 
+    public static void collapsePos(Map<Integer, Map<String, Map<Character, ReadFamilyAmp > > > bcr, int pos, SAMFileWriter sw, 
 				   Map <String, Map<Integer, List< Amplicon> >  > ampMap, boolean verbose,
 				   Map<String, Integer >bcmaster ) {
 
 	for(String bc: bcr.get(pos).keySet()) {
-	    ReadFamilyAmp rf=bcr.get(pos).get(bc);
-	    System.out.println("curpos="+pos);
-	    System.out.println(rf);
-	    rf.collapse(sw, ampMap, bcmaster);
+	    for(Character strand : bcr.get(pos).get(bc).keySet()) {
+		ReadFamilyAmp rf=bcr.get(pos).get(bc).get(strand);
+		System.out.println("curpos="+pos);
+		System.out.println(rf);
+		rf.collapse(sw, ampMap, bcmaster);
+	    }
 	}
     }
 
 
-     public static void addRead(GATKSAMRecord read, Map<String, Map<Integer, Map<String, ReadFamilyAmp> > > bcreads, String curchr, int curpos) {
+    public static void addRead(GATKSAMRecord read, Map<String, Map<Integer, Map<String, Map<Character, ReadFamilyAmp> > > > bcreads, String curchr, int curpos) {
 
+	char strand=getStrand(read);
         String bc=read.getStringAttribute("X0");
         
 	int approxPos=curpos/100;
         if(!bcreads.containsKey(curchr)) {
-	    bcreads.put(curchr, new LinkedHashMap<Integer, Map<String, ReadFamilyAmp> >());
+	    bcreads.put(curchr, new LinkedHashMap<Integer, Map<String, Map<Character, ReadFamilyAmp> > >());
         }
 	//check to see if this read family already stored under previous approxpos. if so, add it
         
 	for(int ii=5; ii>=1; ii--) {
-	    if( bcreads.get(curchr).containsKey(approxPos-ii) && bcreads.get(curchr).get(approxPos-ii).containsKey(bc)) {
-		bcreads.get(curchr).get(approxPos-ii).get(bc).add(read);
-		break;
+	    if( bcreads.get(curchr).containsKey(approxPos-ii) && bcreads.get(curchr).get(approxPos-ii).containsKey(bc) &&
+		bcreads.get(curchr).get(approxPos-ii).get(bc).containsKey(strand)) {
+		bcreads.get(curchr).get(approxPos-ii).get(bc).get(strand).add(read);
+		return;
 	    }
 	}
         if(!bcreads.get(curchr).containsKey(approxPos)) {                                                                                                                               
-	    bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, ReadFamilyAmp >());                                                                                            
+	    bcreads.get(curchr).put(approxPos, new LinkedHashMap<String, Map<Character, ReadFamilyAmp > >());                                                                                            
         }                                                                                                                                                                               
-        if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {                                                                                                                       
+        if(!bcreads.get(curchr).get(approxPos).containsKey(bc)) {
+	    bcreads.get(curchr).get(approxPos).put(bc, new LinkedHashMap<Character, ReadFamilyAmp>());
+	}
+        if(!bcreads.get(curchr).get(approxPos).get(bc).containsKey(strand)) {
 	    ReadFamilyAmp rf = new ReadFamilyAmp(read);                                                                                                                                 
-            bcreads.get(curchr).get(approxPos).put(bc, rf);                                                                                                                             
+            bcreads.get(curchr).get(approxPos).get(bc).put(strand, rf);                                                                                                                             
         } else {                                                                                                                                                                        
-	    bcreads.get(curchr).get(approxPos).get(bc).add(read);                                                                                                                       
+	    bcreads.get(curchr).get(approxPos).get(bc).get(strand).add(read);                                                                                                                 
         }        
     }
+
+
+     public static char getStrand(GATKSAMRecord rec ) {
+	 char strand='+';
+	 if( rec.getFirstOfPairFlag()) {
+	     if(rec.getReadNegativeStrandFlag()) {
+		 strand='-';
+	     }
+	 } else {
+	     if(!rec.getReadNegativeStrandFlag()) {
+		 strand='-';
+	     }
+	 }
+	 return strand;
+     }
      
 }
