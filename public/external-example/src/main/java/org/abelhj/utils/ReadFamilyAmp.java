@@ -160,7 +160,7 @@ public class ReadFamilyAmp {
 	    int len0=readfam.get(rdname)[0].getReadLength();
 	    int len1=readfam.get(rdname)[1].getReadLength();
 	    
-	    if(!lens.containsKey(len1)) {
+	    if(!lens.containsKey(len0)) {
 		lens.put(len0, new LinkedHashMap<Integer, List<String> >());
 	    }
 	    if(!lens.get(len0).containsKey(len1)) {
