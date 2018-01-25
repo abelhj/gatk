@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.io.BufferedReader;
@@ -41,29 +42,21 @@ import org.abelhj.haplotect_utils.*;
 public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
 
     String version="0.2";
-    /**
-     * Reads with mapping quality values lower than this threshold will be skipped. This is set to -1 by default to disable the evaluation and ignore this threshold.
-     */
+    
     @Argument(fullName = "minMappingQuality", shortName = "mmq", doc = "Minimum mapping quality of reads to count towards depth", required = false, minValue = 0, maxValue = Integer.MAX_VALUE)
 	int minMappingQuality = -1;
-    /**
-     * Bases with quality scores lower than this threshold will be skipped. This is set to -1 by default to disable the evaluation and ignore this threshold.
-     */
     @Argument(fullName = "minBaseQuality", shortName = "mbq", doc = "Minimum quality of bases to count towards depth", required = false, minValue = 0, maxValue = Byte.MAX_VALUE)
 	byte minBaseQuality = -1;
     @Argument(fullName = "pairsFile", shortName = "htp", doc = "file of locus pairs", required = true)
 	String pairsFile;
-    @Argument(fullName = "debug", shortName = "dbg", doc = "verbose for debugging", required = false)
-	int debug=0;
-    boolean debugbool=false;
-    
+    @Argument(fullName = "debug", shortName = "debug", doc= "true for verbose output", required=false)
+	boolean debug = false;
     @Argument(fullName = "gstol", shortName= "gstol", doc = "error tolerance for golden section search", required=false, minValue=0.00000001, maxValue=0.1)
 	double gstol=0.005;
     @Argument(fullName = "outPrefix", shortName= "outPrefix", doc = "prefix for output files", required=true)
 	String outPrefix=null;
+    @Argument(fullName = "uniform", shortName = "unif", doc= "use uniform prior for popn hap frequencies", required=false)
 	boolean uniform=false;
-    @Argument(fullName = "unifPrior", shortName= "unif", doc = "use uniform prior for popn hap frequencies", required=false)
-	int unifPrior=0;
     @Argument(fullName = "minreads", shortName = "mr", doc = "minium number of reads at a locus to include", required = false)
         int minreads=20;
     @Argument(fullName="minMultiPct", shortName = "minPct", doc="min pct multihaplotype sites", required=false)
@@ -88,14 +81,7 @@ public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
     double meancov=0;
 
     
-    
     public void initialize() {
-	if(unifPrior==1) {
-	    uniform=true;
-	}
-	if(debug==1) {
-	    debugbool=true;
-	}
         BufferedReader br=null;
         pairs=new ArrayList<SnpPair>();
         snps=new LinkedHashSet<GenomeLoc>();
@@ -108,10 +94,13 @@ public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
                 String[] spl=curLine.split("\\t");
                 GenomeLoc gl1=gpl.parseGenomeLoc(spl[0]+":"+spl[1]);
                 GenomeLoc gl2=gpl.parseGenomeLoc(spl[0]+":"+spl[2]);
-                snps.add(gl1);
-                snps.add(gl2);
-		//pairs.add(new SnpPair(gl1, gl2, curLine));
-                pairs.add(new SnpPair(gl1, gl2, curLine, uniform));  //fix this !!
+		if( !(snps.contains(gl1) && snps.contains(gl2))) {
+			snps.add(gl1);
+			snps.add(gl2);
+			pairs.add(new SnpPair(gl1, gl2, curLine, uniform));  //fix this !!
+		} else {
+		    System.err.println("Warning:  Duplicate snp pair "+gl1+" "+gl2+".  Using only first occurrence.");
+		}
             }
 	    br.close();
 	    out=new PrintStream (new File(outPrefix+".txt"));
@@ -129,7 +118,7 @@ public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
 
     public LocusNameAllele map(RefMetaDataTracker tracker, ReferenceContext ref, AlignmentContext context) {
 
-        if (ref.getBase() == 'N' || ref.getBase() == 'n') return null; // we don't deal with the N ref base case
+        if (ref.getBase() == 'N' || ref.getBase() == 'n') return null;
 	GenomeLoc loc=context.getLocation();
 	if(currentContig==null) {
 	    currentContig=context.getContig();
@@ -173,7 +162,6 @@ public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
     public Integer reduce(LocusNameAllele value, Integer sum) {
         
         if(value!=null) {
-       
             GenomeLoc loc=value.getLocus();
             for(SnpPair pr: pairs) {
                 if(pr.matches(loc)) {
@@ -224,26 +212,28 @@ public class Haplotect extends LocusWalker<LocusNameAllele,Integer>  {
 	  log.println(pr.pairInfo()+"\t"+pr.distance()+"\t"+hapcts.totalCount()+"\t"+hapcts.countString()+"\t"+String.format("%.4f",cFrac));
 	} 
       }
-      if(debug==1) {
+      if(debug) {
         hapcts.print(log);
       }
+      hapmap.put(pr, new LinkedHashMap<String, LinkedHashMap<Integer, BaseandQual> >());
     }
   }
 
   public void onTraversalDone(Integer result) {
 
+        finishChrom();
 	meancov/=totalSites;
 	aveContFrac = 2.0*contamCounts/totalCounts;
 	frac = frac / (1.0 * informativeSites);
 	String[] spl=outPrefix.split("/");
 	String id=spl[spl.length-1];
-	PairLogLik mleCalculator=new PairLogLik(paircts, gstol, debugbool, log);
+	PairLogLik mleCalculator=new PairLogLik(paircts, gstol, debug, log);
 	mleCalculator.calcMleCI();	
 	double mle=mleCalculator.getMle();
 	double[] CI=mleCalculator.getCI();
 	out.println("#sample\tmle\tCI_95\tmean_Frac\tmle_multi\tCI_95_multi\tNum_informative_sites\ttotalSites\tmean_Cov");
 	if(1.0*informativeSites/totalSites>0.01*minMultiPct) {
-	    mleCalculator=new PairLogLik(paircts, multiPairs, gstol, debugbool, log);
+	    mleCalculator=new PairLogLik(paircts, multiPairs, gstol, debug, log);
 	    paircts=null;
 	    mleCalculator.calcMleCI();
 	    double mle_contam=mleCalculator.getMle();

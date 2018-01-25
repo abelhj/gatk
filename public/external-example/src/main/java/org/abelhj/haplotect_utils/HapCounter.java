@@ -116,6 +116,7 @@ public class HapCounter {
             else 
                 ff=1.0*ct/total;
             popfreqs.put(hh, ff);
+	    //System.err.println(hh+"\t"+ff);
         }
     }
 
